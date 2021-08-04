@@ -1,5 +1,4 @@
 import openpyxl
-from openpyxl.styles import Alignment
 from bs4 import BeautifulSoup
 from selenium import webdriver
 from selenium.webdriver.common.by import By
@@ -49,6 +48,7 @@ def update_prices():
             driver.quit()
             break
     parsing()
+
 
 
 # Парсит полученные данные
@@ -190,8 +190,28 @@ def do_table():
     wb.save('Database.xlsx')
 
 
+def update_barters():
+    driver_path = r'C:\Program Files (x86)\Google\Chrome\chromedriver.exe'
+    driver = webdriver.Chrome(executable_path=driver_path)
+    driver.get('https://tarkov-market.com/ru/hideout')
+    while True:
+        try:
+            driver.find_element(By.XPATH, '//span[@class="big"][text()="Противогаз ГП-5"]')
+        except Exception:
+            driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
+        else:
+            with open('C:/Users/Karapuzo/PycharmProjects/Tarkov-Parser/HTMLs/CraftHTML.txt', 'w',
+                      encoding="utf-8") as data:
+                data.write(driver.page_source)
+            break
+    cards = driver.find_elements(By.XPATH, '//div[@class="card recipe"]')
+    wb = openpyxl.load_workbook('Database.xlsx')
+    for i in cards:
+        trader = driver.find_element(By.XPATH, '//div[@class="big"]')
+
+
 if __name__ == '__main__':
-    do_table()
+    update_prices()
 
 
 
