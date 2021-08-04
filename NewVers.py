@@ -65,9 +65,9 @@ def update_prices():
     ws.cell(row=1, column=2, value='Price')
     ws.column_dimensions['A'].width = 36
     ws.column_dimensions['B'].width = 8
-    for i in range(2, len(names)+2):
-        ws.cell(i, 1).value = titles[i]
-        ws.cell(i, 2).value = int(prices[i])
+    for i in range(len(names)):
+        ws.cell(i+2, 1).value = titles[i]
+        ws.cell(i+2, 2).value = int(prices[i])
     wb.save('Database.xlsx')
 
 
@@ -81,7 +81,7 @@ def update_crafts():
         except Exception:
             driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
         else:
-            with open('C:/Users/Karapuzo/PycharmProjects/Tarkov-Parser/HTMLs/CraftHTML.txt', 'w', encoding="utf-8") as data:
+            with open('CraftHTML.txt', 'w', encoding="utf-8") as data:
                 data.write(driver.page_source)
             break
     cards = driver.find_elements(By.XPATH, '//div[@class="card recipe"]')
@@ -145,6 +145,7 @@ def update_crafts():
         column += 1
         ws.cell(row=row, column=column, value='=W'+str(row)+'/R'+str(row)+'*60')
         row += 1
+    wb.save('Database.xlsx')
 
 
 def do_table():
@@ -202,7 +203,7 @@ def update_barters():
 
 
 if __name__ == '__main__':
-    do_table()
+    update_prices()
 
 
 
@@ -216,3 +217,4 @@ if __name__ == '__main__':
 #   графики изменения цены
 # TODO: Сделать update_prices и parsing одной функцией
 # TODO: Добавить сообщение оповещающее ою ошибке
+# TODO: Добавить подписи к колонкам в crafts  crafts_nude
