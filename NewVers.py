@@ -1,5 +1,5 @@
 import openpyxl
-from bs4 import BeautifulSoup
+import os
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 
@@ -43,21 +43,9 @@ def update_prices():
         except Exception:
             driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
         else:
-            with open('C:/Users/Karapuzo/PycharmProjects/Tarkov-Parser/HTMLs/HTML.txt', 'w', encoding="utf-8") as data:
-                data.write(driver.page_source)
-            driver.quit()
             break
-    parsing()
-
-
-
-# Парсит полученные данные
-def parsing():
-    with open('C:/Users/Karapuzo/PycharmProjects/Tarkov-Parser/HTMLs/HTML.txt', 'r', encoding="utf-8") as data:
-        response = data.read()
-        soup = BeautifulSoup(response, 'lxml')
-    names = soup.find_all('span', class_='name')
-    pric = soup.find_all('span', class_='price-main')
+    names = driver.find_elements(By.XPATH, '//span[@class="name"]')
+    pric = driver.find_elements(By.XPATH, '//span[@class="price-main"]')
     titles = []
     prices = []
     for name in names:
@@ -77,9 +65,9 @@ def parsing():
     ws.cell(row=1, column=2, value='Price')
     ws.column_dimensions['A'].width = 36
     ws.column_dimensions['B'].width = 8
-    for i in range(len(names)):
-        ws.cell(i+2, 1).value = titles[i]
-        ws.cell(i+2, 2).value = int(prices[i])
+    for i in range(2, len(names)+2):
+        ws.cell(i, 1).value = titles[i]
+        ws.cell(i, 2).value = int(prices[i])
     wb.save('Database.xlsx')
 
 
@@ -149,7 +137,7 @@ def update_crafts():
         column += 1
         ws.cell(row=row, column=column, value=finddigit(ramount))
         column += 1
-        ws.cell(row=row, column=column, value='=Prices!'+rpricecord)
+        ws.cell(row=row, column=column, value='=Prices!'+str(rpricecord))
         column += 1
         ws.cell(row=row, column=column, value='=U'+str(row)+'*T'+str(row))
         column += 1
@@ -161,7 +149,10 @@ def update_crafts():
 
 def do_table():
     wb = openpyxl.load_workbook('Database.xlsx')
-    ws = wb['Crafts']
+    try:
+        ws = wb['Crafts']
+    except KeyError:
+        ws = wb.create_sheet('Crafts')
     row = 2
     for i in range(55):
         ws.cell(row=row, column=1, value='=Crafts_nude!A'+str(i+2))
@@ -211,7 +202,7 @@ def update_barters():
 
 
 if __name__ == '__main__':
-    update_prices()
+    do_table()
 
 
 
