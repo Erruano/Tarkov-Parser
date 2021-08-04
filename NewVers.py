@@ -48,6 +48,7 @@ def update_prices():
                 data.write(driver.page_source)
             driver.quit()
             break
+    parsing()
 
 
 # Парсит полученные данные
@@ -181,7 +182,7 @@ def do_table():
         ws.merge_cells(start_row=row, start_column=9, end_row=row + 4, end_column=9)
         ws.cell(row=row, column=10, value='=I' + str(row) + '*H' + str(row))
         ws.merge_cells(start_row=row, start_column=10, end_row=row + 4, end_column=10)
-        ws.cell(row=row, column=11, value='=J' + str(row) + '-E' + str(row) + '' + str(row))
+        ws.cell(row=row, column=11, value='=J' + str(row) + '-E' + str(row))
         ws.merge_cells(start_row=row, start_column=11, end_row=row + 4, end_column=11)
         ws.cell(row=row, column=12, value='=K' + str(row) + '/F' + str(row) + '*60')
         ws.merge_cells(start_row=row, start_column=12, end_row=row + 4, end_column=12)
@@ -190,8 +191,7 @@ def do_table():
 
 
 if __name__ == '__main__':
-    update_prices()
-    parsing()
+    do_table()
 
 
 
