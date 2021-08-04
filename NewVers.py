@@ -90,7 +90,12 @@ def update_crafts():
         ws = wb['Crafts_nude']
     except KeyError:
         ws = wb.create_sheet('Crafts_nude')
-    row = 1
+        columns = ['Module', 'Ingredient', 'Amount', 'Price', 'Ingredient', 'Amount', 'Price', 'Ingredient', 'Amount',
+                   'Price', 'Ingredient', 'Amount', 'Price', 'Ingredient', 'Amount', 'Price', 'Sum', 'Time(min)',
+                   'Name', 'Amount', 'Price', 'Sum', 'Profit', 'Profit/H']
+        for i in range(1, len(columns)+1):
+            ws.cell(1, i, value=columns[i-1])
+    row = 2
     for i in range(1, len(cards)+1):
         column = 1
         ingredients = []
@@ -148,12 +153,16 @@ def update_crafts():
     wb.save('Database.xlsx')
 
 
-def do_table():
+def make_table():
     wb = openpyxl.load_workbook('Database.xlsx')
     try:
         ws = wb['Crafts']
     except KeyError:
         ws = wb.create_sheet('Crafts')
+        columns = ['Module', 'Ingredients', 'Amount', 'Price', 'Sum', 'Time(min)',
+                   'Name', 'Amount', 'Price', 'Sum','Profit', 'Profit/H']
+        for i in range(1, len(columns) + 1):
+            ws.cell(1, i, value=columns[i - 1])
     row = 2
     for i in range(55):
         ws.cell(row=row, column=1, value='=Crafts_nude!A'+str(i+2))
@@ -204,12 +213,15 @@ def update_barters():
 
 if __name__ == '__main__':
     update_prices()
+    update_crafts()
+    make_table()
 
 
 
 # TODO: Попробовать новенькое:
 #   синхронный код
 #   Попробовать оптимизировать (https://medium.com/nuances-of-programming/как-ускорить-python-8df43f87ef6f)
+#   Перевести браузер в headless
 # TODO: Спрятать окно браузера
 # TODO: Доавить в таблицу:
 #   колонки продажи торговцу
