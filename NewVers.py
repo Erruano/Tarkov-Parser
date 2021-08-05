@@ -1,10 +1,9 @@
 import openpyxl
-import os
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 
 
-def finddigit(a):
+def find_digit(a):
     num = ''
     for i in list(a):
         if i.isdigit():
@@ -23,11 +22,11 @@ def isint(a):
         return False
 
 
-def seekprice(val):
+def seek_price(val):
     wb = openpyxl.load_workbook('Database.xlsx')
     ws = wb['Prices']
-    for i in range(1, ws.max_row+1):
-        if ws.cell(row=i, column=1,).value == val:
+    for i in range(1, ws.max_row + 1):
+        if ws.cell(row=i, column=1, ).value == val:
             return ws.cell(row=i, column=2).coordinate
 
 
@@ -51,7 +50,7 @@ def update_prices():
     for name in names:
         titles.append(name.text)
     for price in pric:
-        prices.append(finddigit(price.text))
+        prices.append(find_digit(price.text))
     try:
         wb = openpyxl.load_workbook('Database.xlsx')
     except FileNotFoundError:
@@ -66,8 +65,8 @@ def update_prices():
     ws.column_dimensions['A'].width = 36
     ws.column_dimensions['B'].width = 8
     for i in range(len(names)):
-        ws.cell(i+2, 1).value = titles[i]
-        ws.cell(i+2, 2).value = int(prices[i])
+        ws.cell(i + 2, 1).value = titles[i]
+        ws.cell(i + 2, 2).value = int(prices[i])
     wb.save('Database.xlsx')
 
 
@@ -81,8 +80,6 @@ def update_crafts():
         except Exception:
             driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
         else:
-            with open('CraftHTML.txt', 'w', encoding="utf-8") as data:
-                data.write(driver.page_source)
             break
     cards = driver.find_elements(By.XPATH, '//div[@class="card recipe"]')
     wb = openpyxl.load_workbook('Database.xlsx')
@@ -93,22 +90,31 @@ def update_crafts():
         columns = ['Module', 'Ingredient', 'Amount', 'Price', 'Ingredient', 'Amount', 'Price', 'Ingredient', 'Amount',
                    'Price', 'Ingredient', 'Amount', 'Price', 'Ingredient', 'Amount', 'Price', 'Sum', 'Time(min)',
                    'Name', 'Amount', 'Price', 'Sum', 'Profit', 'Profit/H']
-        for i in range(1, len(columns)+1):
-            ws.cell(1, i, value=columns[i-1])
+        for i in range(1, len(columns) + 1):
+            ws.cell(1, i, value=columns[i - 1])
     row = 2
-    for i in range(1, len(cards)+1):
+    for i in range(1, len(cards) + 1):
         column = 1
         ingredients = []
-        InAmount = []
+        in_amount = []
         pricescord = []
         names = driver.find_elements(By.XPATH, '//div[@class="card recipe"][' + str(i) + ']//span[@class="big"]')
         for y in range(1, len(names)):
-            ingredients.append(driver.find_element(By.XPATH, '//div[@class="card recipe"][' + str(i) + ']//div[@class="d-flex only mb-15"][' + str(y) + ']//span').get_attribute('textContent'))
-            InAmount.append(driver.find_element(By.XPATH, '//div[@class="card recipe"][' + str(i) + ']//div[@class="d-flex only mb-15"][' + str(y) + ']//div[@class="image"]/div').get_attribute('textContent'))
-            pricescord.append(seekprice(driver.find_element(By.XPATH, '//div[@class="card recipe"][' + str(i) + ']//div[@class="d-flex only mb-15"][' + str(y) + ']//span').get_attribute('textContent')))
+            ingredients.append(driver.find_element(By.XPATH, '//div[@class="card recipe"][' + str(i) +
+                                                   ']//div[@class="d-flex only mb-15"][' + str(y) +
+                                                   ']//span').get_attribute('textContent'))
+            in_amount.append(driver.find_element(By.XPATH, '//div[@class="card recipe"][' + str(i) +
+                                                 ']//div[@class="d-flex only mb-15"][' + str(y) +
+                                                 ']//div[@class="image"]/div').get_attribute('textContent'))
+            pricescord.append(seek_price(driver.find_element(By.XPATH, '//div[@class="card recipe"][' + str(i) +
+                                                             ']//div[@class="d-flex only mb-15"][' + str(y) +
+                                                             ']//span').get_attribute('textContent')))
         modules = driver.find_element(By.XPATH, "//div[@class='row recipe'][" + str(i) + "]//div[@class='big']").text
-        result = driver.find_element(By.XPATH, '//div[@class="card recipe"][' + str(i) + ']//div[@class="d-flex only mb-15"][' + str(len(names)) + ']//span').get_attribute('textContent')
-        time = list(driver.find_element(By.XPATH, '//div[@class="card recipe"][' + str(i) + ']//div[@class="text-center big"]').get_attribute('textContent'))
+        result = driver.find_element(By.XPATH, '//div[@class="card recipe"][' + str(i) +
+                                     ']//div[@class="d-flex only mb-15"][' + str(len(names)) +
+                                     ']//span').get_attribute('textContent')
+        time = list(driver.find_element(By.XPATH, '//div[@class="card recipe"][' + str(i) +
+                                        ']//div[@class="text-center big"]').get_attribute('textContent'))
         minutes = 0
         tim = ''
         for t in range(len(time)):
@@ -120,35 +126,41 @@ def update_crafts():
             elif time[t] == 'м':
                 minutes += int(tim)
                 break
-        ramount = driver.find_element(By.XPATH, '//div[@class="card recipe"][' + str(i) + ']//div[@class="d-flex only mb-15"][' + str(len(names)) + ']//div[@class="image"]/div').get_attribute('textContent')
-        rpricecord = seekprice(driver.find_element(By.XPATH, '//div[@class="card recipe"][' + str(i) + ']//div[@class="d-flex only mb-15"][' + str(len(names)) + ']//span').get_attribute('textContent'))
+        ramount = driver.find_element(By.XPATH, '//div[@class="card recipe"][' + str(i) +
+                                      ']//div[@class="d-flex only mb-15"][' + str(len(names)) +
+                                      ']//div[@class="image"]/div').get_attribute('textContent')
+        rpricecord = seek_price(driver.find_element(By.XPATH, '//div[@class="card recipe"][' + str(i) +
+                                                    ']//div[@class="d-flex only mb-15"][' + str(len(names)) +
+                                                    ']//span').get_attribute('textContent'))
         ws.cell(row=row, column=column, value=modules)
         column += 1
         for y in range(1, 6):
             try:
-                ws.cell(row=row, column=column, value=ingredients[y-1])
+                ws.cell(row=row, column=column, value=ingredients[y - 1])
                 column += 1
-                ws.cell(row=row, column=column, value=finddigit(InAmount[y-1]))
+                ws.cell(row=row, column=column, value=find_digit(in_amount[y - 1]))
                 column += 1
-                ws.cell(row=row, column=column, value='=Prices!'+pricescord[y-1])
+                ws.cell(row=row, column=column, value='=Prices!' + pricescord[y - 1])
                 column += 1
             except IndexError:
                 column += 3
-        ws.cell(row=row, column=column, value=('=D'+str(row)+'*C'+str(row)+'+G'+str(row)+'*F'+str(row)+'+J'+str(row)+'*I'+str(row)+'+M'+str(row)+'*L'+str(row)+'+P'+str(row)+'*O'+str(row)))
+        ws.cell(row=row, column=column,
+                value=('=D' + str(row) + '*C' + str(row) + '+G' + str(row) + '*F' + str(row) + '+J' + str(row) +
+                       '*I' + str(row) + '+M' + str(row) + '*L' + str(row) + '+P' + str(row) + '*O' + str(row)))
         column += 1
         ws.cell(row=row, column=column, value=minutes)
         column += 1
         ws.cell(row=row, column=column, value=result)
         column += 1
-        ws.cell(row=row, column=column, value=finddigit(ramount))
+        ws.cell(row=row, column=column, value=find_digit(ramount))
         column += 1
-        ws.cell(row=row, column=column, value='=Prices!'+str(rpricecord))
+        ws.cell(row=row, column=column, value='=Prices!' + str(rpricecord))
         column += 1
-        ws.cell(row=row, column=column, value='=U'+str(row)+'*T'+str(row))
+        ws.cell(row=row, column=column, value='=U' + str(row) + '*T' + str(row))
         column += 1
-        ws.cell(row=row, column=column, value='=V'+str(row)+'-Q'+str(row))
+        ws.cell(row=row, column=column, value='=V' + str(row) + '-Q' + str(row))
         column += 1
-        ws.cell(row=row, column=column, value='=W'+str(row)+'/R'+str(row)+'*60')
+        ws.cell(row=row, column=column, value='=W' + str(row) + '/R' + str(row) + '*60')
         row += 1
     wb.save('Database.xlsx')
 
@@ -160,18 +172,18 @@ def make_table():
     except KeyError:
         ws = wb.create_sheet('Crafts')
         columns = ['Module', 'Ingredients', 'Amount', 'Price', 'Sum', 'Time(min)',
-                   'Name', 'Amount', 'Price', 'Sum','Profit', 'Profit/H']
+                   'Name', 'Amount', 'Price', 'Sum', 'Profit', 'Profit/H']
         for i in range(1, len(columns) + 1):
             ws.cell(1, i, value=columns[i - 1])
     row = 2
-    for i in range(55):
-        ws.cell(row=row, column=1, value='=Crafts_nude!A'+str(i+2))
-        ws.merge_cells(start_row=row, start_column=1, end_row=row+4, end_column=1)
+    for i in range(124):
+        ws.cell(row=row, column=1, value='=Crafts_nude!A' + str(i + 2))
+        ws.merge_cells(start_row=row, start_column=1, end_row=row + 4, end_column=1)
         for y in range(0, 5):
-            ws.cell(row=row + y, column=2, value='=Crafts_nude!' + str(chr(ord('B') + (y * 3))) + str(i+2))
-            ws.cell(row=row + y, column=3, value='=Crafts_nude!' + str(chr(ord('C') + (y * 3))) + str(i+2))
-            ws.cell(row=row + y, column=4, value='=Crafts_nude!' + str(chr(ord('D') + (y * 3))) + str(i+2))
-        ws.cell(row=row, column=5, value='=Crafts_nude!Q' + str(i+2))
+            ws.cell(row=row + y, column=2, value='=Crafts_nude!' + str(chr(ord('B') + (y * 3))) + str(i + 2))
+            ws.cell(row=row + y, column=3, value='=Crafts_nude!' + str(chr(ord('C') + (y * 3))) + str(i + 2))
+            ws.cell(row=row + y, column=4, value='=Crafts_nude!' + str(chr(ord('D') + (y * 3))) + str(i + 2))
+        ws.cell(row=row, column=5, value='=Crafts_nude!Q' + str(i + 2))
         ws.merge_cells(start_row=row, start_column=5, end_row=row + 4, end_column=5)
         ws.cell(row=row, column=6, value='=Crafts_nude!R' + str(i + 2))
         ws.merge_cells(start_row=row, start_column=6, end_row=row + 4, end_column=6)
@@ -194,10 +206,10 @@ def make_table():
 def update_barters():
     driver_path = r'C:\Program Files (x86)\Google\Chrome\chromedriver.exe'
     driver = webdriver.Chrome(executable_path=driver_path)
-    driver.get('https://tarkov-market.com/ru/hideout')
+    driver.get('https://tarkov-market.com/ru/barter')
     while True:
         try:
-            driver.find_element(By.XPATH, '//span[@class="big"][text()="Противогаз ГП-5"]')
+            driver.find_element(By.XPATH, '//span[@class="big"][text()="Бронежилет 6Б43 6А Забрало-Ш (0/85)"]')
         except Exception:
             driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
         else:
@@ -207,26 +219,72 @@ def update_barters():
             break
     cards = driver.find_elements(By.XPATH, '//div[@class="card recipe"]')
     wb = openpyxl.load_workbook('Database.xlsx')
-    for i in cards:
-        trader = driver.find_element(By.XPATH, '//div[@class="big"]')
+    ws = wb.create_sheet('Barters')
+    row = 1
+    for i in range(1, len(cards) + 1):
+        ingredients = []
+        in_amount = []
+        pricescord = []
+        trader = driver.find_element(By.XPATH, '//div[@class="card recipe][' + str(i) +
+                                     ']//div[@class="big"]').get_attribute('textContent')
+        names = driver.find_elements(By.XPATH, '//div[@class="card recipe"][' + str(i) + ']//span[@class="big"]')
+        for y in range(1, len(names)):
+            ingredients.append(driver.find_element(By.XPATH, '//div[@class="card recipe"][' + str(
+                i) + ']//div[@class="d-flex only mb-15"][' + str(y) + ']//span').get_attribute('textContent'))
+            in_amount.append(driver.find_element(By.XPATH, '//div[@class="card recipe"][' + str(
+                i) + ']//div[@class="d-flex only mb-15"][' + str(y) + ']//div[@class="image"]/div').get_attribute(
+                'textContent'))
+            pricescord.append(seek_price(driver.find_element(By.XPATH, '//div[@class="card recipe"][' + str(
+                i) + ']//div[@class="d-flex only mb-15"][' + str(y) + ']//span').get_attribute('textContent')))
+        result = driver.find_element(By.XPATH, '//div[@class="card recipe"][' + str(
+            i) + ']//div[@class="d-flex only mb-15"][' + str(len(names)) + ']//span').get_attribute('textContent')
+        ramount = driver.find_element(By.XPATH, '//div[@class="card recipe"][' + str(
+            i) + ']//div[@class="d-flex only mb-15"][' + str(len(names)) + ']//div[@class="image"]/div').get_attribute(
+            'textContent')
+        rpricecord = seek_price(driver.find_element(By.XPATH, '//div[@class="card recipe"][' + str(
+            i) + ']//div[@class="d-flex only mb-15"][' + str(len(names)) + ']//span').get_attribute('textContent'))
+        column = 1
+        ws.cell(row=row, column=column, value=trader)
+        column += 1
+        for y in range(1, 6):
+            try:
+                ws.cell(row=row, column=column, value=ingredients[y - 1])
+                column += 1
+                ws.cell(row=row, column=column, value=find_digit(in_amount[y - 1]))
+                column += 1
+                ws.cell(row=row, column=column, value='=Prices!' + pricescord[y - 1])
+                column += 1
+            except IndexError:
+                column += 3
+        ws.cell(row=row, column=column, value=(
+                '=D' + str(row) + '*C' + str(row) + '+G' + str(row) + '*F' + str(row) + '+J' + str(row) +
+                '*I' + str(row) + '+M' + str(row) + '*L' + str(row) + '+P' + str(row) + '*O' + str(row)))
+        column += 1
+        ws.cell(row=row, column=column, value=result)
+        column += 1
+        ws.cell(row=row, column=column, value=find_digit(ramount))
+        column += 1
+        ws.cell(row=row, column=column, value='=Prices!' + str(rpricecord))
+        column += 1
+        ws.cell(row=row, column=column, value='=U' + str(row) + '*T' + str(row))
+        column += 1
+        ws.cell(row=row, column=column, value='=V' + str(row) + '-Q' + str(row))
+        column += 1
+        ws.cell(row=row, column=column, value='=W' + str(row) + '/R' + str(row) + '*60')
+        row += 1
+    wb.save('Database.xlsx')
 
 
 if __name__ == '__main__':
     update_prices()
-    update_crafts()
-    make_table()
-
-
 
 # TODO: Попробовать новенькое:
 #   синхронный код
 #   Попробовать оптимизировать (https://medium.com/nuances-of-programming/как-ускорить-python-8df43f87ef6f)
-#   Перевести браузер в headless
-# TODO: Спрятать окно браузера
+#   Перевести браузер в headless или хоть спрятать его
 # TODO: Доавить в таблицу:
 #   колонки продажи торговцу
 #   динамику цены
 #   графики изменения цены
-# TODO: Сделать update_prices и parsing одной функцией
-# TODO: Добавить сообщение оповещающее ою ошибке
-# TODO: Добавить подписи к колонкам в crafts  crafts_nude
+# TODO: Добавить сообщение оповещающее об ошибках
+# TODO: Подписать колонки в update_barters
