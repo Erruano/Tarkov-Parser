@@ -10,7 +10,7 @@ def find_digit(a):
             num += i
         elif i == '.':
             num += ','
-    return num
+    return int(num)
 
 
 # Является ли переменная числом
@@ -45,12 +45,16 @@ def update_prices():
             break
     names = driver.find_elements(By.XPATH, '//span[@class="name"]')
     pric = driver.find_elements(By.XPATH, '//span[@class="price-main"]')
+    vendor = driver.find_elements(By.XPATH, '//div[@class="alt"]')
     titles = []
     prices = []
+    vendor_prices = []
     for name in names:
         titles.append(name.text)
     for price in pric:
         prices.append(find_digit(price.text))
+    for price in vendor:
+        vendor_prices.append(find_digit(price.text))
     try:
         wb = openpyxl.load_workbook('Database.xlsx')
     except FileNotFoundError:
@@ -62,11 +66,17 @@ def update_prices():
         ws.title = 'Prices'
     ws.cell(row=1, column=1, value='Name')
     ws.cell(row=1, column=2, value='Price')
+    ws.cell(row=1, column=3, value='Vendor price')
     ws.column_dimensions['A'].width = 36
     ws.column_dimensions['B'].width = 8
+    ws.column_dimensions['C'].width = 10
+    row = 2
     for i in range(len(names)):
-        ws.cell(i + 2, 1).value = titles[i]
-        ws.cell(i + 2, 2).value = int(prices[i])
+        ws.cell(row, 1).value = titles[i]
+        ws.cell(row, 2).value = prices[i]
+        ws.cell(row, 3).value = vendor_prices[i]
+        ws.cell(row, 4).value = '=C' + str(row) + '-B' + str(row)
+        row += 1
     wb.save('Database.xlsx')
 
 
@@ -219,13 +229,21 @@ def update_barters():
             break
     cards = driver.find_elements(By.XPATH, '//div[@class="card recipe"]')
     wb = openpyxl.load_workbook('Database.xlsx')
-    ws = wb.create_sheet('Barters')
-    row = 1
+    try:
+        ws = wb['Barters']
+    except KeyError:
+        ws = wb.create_sheet('Barters')
+        columns = ['Module', 'Ingredient', 'Amount', 'Price', 'Ingredient', 'Amount', 'Price', 'Ingredient', 'Amount',
+                   'Price', 'Ingredient', 'Amount', 'Price', 'Ingredient', 'Amount', 'Price', 'Sum', 'Time(min)',
+                   'Name', 'Amount', 'Price', 'Sum', 'Profit', 'Profit/H']
+        for i in range(1, len(columns) + 1):
+            ws.cell(1, i, value=columns[i - 1])
+    row = 3
     for i in range(1, len(cards) + 1):
         ingredients = []
         in_amount = []
-        pricescord = []
-        trader = driver.find_element(By.XPATH, '//div[@class="card recipe][' + str(i) +
+        prices_coordinates = []
+        trader = driver.find_element(By.XPATH, '//div[@class="card recipe"][' + str(i) +
                                      ']//div[@class="big"]').get_attribute('textContent')
         names = driver.find_elements(By.XPATH, '//div[@class="card recipe"][' + str(i) + ']//span[@class="big"]')
         for y in range(1, len(names)):
@@ -234,14 +252,14 @@ def update_barters():
             in_amount.append(driver.find_element(By.XPATH, '//div[@class="card recipe"][' + str(
                 i) + ']//div[@class="d-flex only mb-15"][' + str(y) + ']//div[@class="image"]/div').get_attribute(
                 'textContent'))
-            pricescord.append(seek_price(driver.find_element(By.XPATH, '//div[@class="card recipe"][' + str(
+            prices_coordinates.append(seek_price(driver.find_element(By.XPATH, '//div[@class="card recipe"][' + str(
                 i) + ']//div[@class="d-flex only mb-15"][' + str(y) + ']//span').get_attribute('textContent')))
         result = driver.find_element(By.XPATH, '//div[@class="card recipe"][' + str(
             i) + ']//div[@class="d-flex only mb-15"][' + str(len(names)) + ']//span').get_attribute('textContent')
-        ramount = driver.find_element(By.XPATH, '//div[@class="card recipe"][' + str(
+        result_amount = driver.find_element(By.XPATH, '//div[@class="card recipe"][' + str(
             i) + ']//div[@class="d-flex only mb-15"][' + str(len(names)) + ']//div[@class="image"]/div').get_attribute(
             'textContent')
-        rpricecord = seek_price(driver.find_element(By.XPATH, '//div[@class="card recipe"][' + str(
+        result_price_coordinate = seek_price(driver.find_element(By.XPATH, '//div[@class="card recipe"][' + str(
             i) + ']//div[@class="d-flex only mb-15"][' + str(len(names)) + ']//span').get_attribute('textContent'))
         column = 1
         ws.cell(row=row, column=column, value=trader)
@@ -252,7 +270,7 @@ def update_barters():
                 column += 1
                 ws.cell(row=row, column=column, value=find_digit(in_amount[y - 1]))
                 column += 1
-                ws.cell(row=row, column=column, value='=Prices!' + pricescord[y - 1])
+                ws.cell(row=row, column=column, value='=Prices!' + prices_coordinates[y - 1])
                 column += 1
             except IndexError:
                 column += 3
@@ -262,9 +280,9 @@ def update_barters():
         column += 1
         ws.cell(row=row, column=column, value=result)
         column += 1
-        ws.cell(row=row, column=column, value=find_digit(ramount))
+        ws.cell(row=row, column=column, value=find_digit(result_amount))
         column += 1
-        ws.cell(row=row, column=column, value='=Prices!' + str(rpricecord))
+        ws.cell(row=row, column=column, value='=Prices!' + str(result_price_coordinate))
         column += 1
         ws.cell(row=row, column=column, value='=U' + str(row) + '*T' + str(row))
         column += 1
