@@ -10,7 +10,7 @@ def find_digit(a):
             num += i
         elif i == '.':
             num += ','
-    return int(num)
+    return num
 
 
 # Является ли переменная числом
@@ -28,6 +28,14 @@ def seek_price(val):
     for i in range(1, ws.max_row + 1):
         if ws.cell(row=i, column=1, ).value == val:
             return ws.cell(row=i, column=2).coordinate
+
+
+def seek_vendor_price(val):
+    wb = openpyxl.load_workbook('Database.xlsx')
+    ws = wb['Prices']
+    for i in range(1, ws.max_row + 1):
+        if ws.cell(row=i, column=1, ).value == val:
+            return ws.cell(row=i, column=3).coordinate
 
 
 # Обновлние HTML
@@ -73,8 +81,8 @@ def update_prices():
     row = 2
     for i in range(len(names)):
         ws.cell(row, 1).value = titles[i]
-        ws.cell(row, 2).value = prices[i]
-        ws.cell(row, 3).value = vendor_prices[i]
+        ws.cell(row, 2).value = int(prices[i])
+        ws.cell(row, 3).value = int(vendor_prices[i])
         ws.cell(row, 4).value = '=C' + str(row) + '-B' + str(row)
         row += 1
     wb.save('Database.xlsx')
@@ -136,12 +144,13 @@ def update_crafts():
             elif time[t] == 'м':
                 minutes += int(tim)
                 break
-        ramount = driver.find_element(By.XPATH, '//div[@class="card recipe"][' + str(i) +
-                                      ']//div[@class="d-flex only mb-15"][' + str(len(names)) +
-                                      ']//div[@class="image"]/div').get_attribute('textContent')
-        rpricecord = seek_price(driver.find_element(By.XPATH, '//div[@class="card recipe"][' + str(i) +
-                                                    ']//div[@class="d-flex only mb-15"][' + str(len(names)) +
-                                                    ']//span').get_attribute('textContent'))
+        result_amount = driver.find_element(By.XPATH, '//div[@class="card recipe"][' + str(i) +
+                                            ']//div[@class="d-flex only mb-15"][' + str(len(names)) +
+                                            ']//div[@class="image"]/div').get_attribute('textContent')
+        result_price_coordinate = seek_price(driver.find_element(By.XPATH, '//div[@class="card recipe"][' + str(i) +
+                                                                 ']//div[@class="d-flex only mb-15"][' + str(
+            len(names)) +
+                                                                 ']//span').get_attribute('textContent'))
         ws.cell(row=row, column=column, value=modules)
         column += 1
         for y in range(1, 6):
@@ -162,9 +171,9 @@ def update_crafts():
         column += 1
         ws.cell(row=row, column=column, value=result)
         column += 1
-        ws.cell(row=row, column=column, value=find_digit(ramount))
+        ws.cell(row=row, column=column, value=find_digit(result_amount))
         column += 1
-        ws.cell(row=row, column=column, value='=Prices!' + str(rpricecord))
+        ws.cell(row=row, column=column, value='=Prices!' + str(result_price_coordinate))
         column += 1
         ws.cell(row=row, column=column, value='=U' + str(row) + '*T' + str(row))
         column += 1
@@ -230,15 +239,15 @@ def update_barters():
     cards = driver.find_elements(By.XPATH, '//div[@class="card recipe"]')
     wb = openpyxl.load_workbook('Database.xlsx')
     try:
-        ws = wb['Barters']
+        ws = wb['Barters_nude']
     except KeyError:
-        ws = wb.create_sheet('Barters')
+        ws = wb.create_sheet('Barters_nude')
         columns = ['Module', 'Ingredient', 'Amount', 'Price', 'Ingredient', 'Amount', 'Price', 'Ingredient', 'Amount',
                    'Price', 'Ingredient', 'Amount', 'Price', 'Ingredient', 'Amount', 'Price', 'Sum', 'Time(min)',
                    'Name', 'Amount', 'Price', 'Sum', 'Profit', 'Profit/H']
         for i in range(1, len(columns) + 1):
             ws.cell(1, i, value=columns[i - 1])
-    row = 3
+    row = 2
     for i in range(1, len(cards) + 1):
         ingredients = []
         in_amount = []
@@ -293,16 +302,56 @@ def update_barters():
     wb.save('Database.xlsx')
 
 
+def make_barters_table():
+    wb = openpyxl.load_workbook('Database.xlsx')
+    try:
+        ws = wb['Barters']
+    except KeyError:
+        ws = wb.create_sheet('Barters')
+        columns = ['Module', 'Ingredients', 'Amount', 'Price', 'Sum', 'Time(min)',
+                   'Name', 'Amount', 'Price', 'Sum', 'Profit', 'Profit/H']
+        for i in range(1, len(columns) + 1):
+            ws.cell(1, i, value=columns[i - 1])
+    row = 2
+    for i in range(124):
+        ws.cell(row=row, column=1, value='=Barters_nude!A' + str(i + 2))
+        ws.merge_cells(start_row=row, start_column=1, end_row=row + 4, end_column=1)
+        for y in range(0, 5):
+            ws.cell(row=row + y, column=2, value='=Barters_nude!' + str(chr(ord('B') + (y * 3))) + str(i + 2))
+            ws.cell(row=row + y, column=3, value='=Barters_nude!' + str(chr(ord('C') + (y * 3))) + str(i + 2))
+            ws.cell(row=row + y, column=4, value='=Barters_nude!' + str(chr(ord('D') + (y * 3))) + str(i + 2))
+        ws.cell(row=row, column=5, value='=Barters_nude!Q' + str(i + 2))
+        ws.merge_cells(start_row=row, start_column=5, end_row=row + 4, end_column=5)
+        ws.cell(row=row, column=6, value='=Barters_nude!R' + str(i + 2))
+        ws.merge_cells(start_row=row, start_column=6, end_row=row + 4, end_column=6)
+        ws.cell(row=row, column=7, value='=Barters_nude!S' + str(i + 2))
+        ws.merge_cells(start_row=row, start_column=7, end_row=row + 4, end_column=7)
+        ws.cell(row=row, column=8, value='=Barters_nude!T' + str(i + 2))
+        ws.merge_cells(start_row=row, start_column=8, end_row=row + 4, end_column=8)
+        ws.cell(row=row, column=9, value='=Barters_nude!U' + str(i + 2))
+        ws.merge_cells(start_row=row, start_column=9, end_row=row + 4, end_column=9)
+        ws.cell(row=row, column=10, value='=I' + str(row) + '*H' + str(row))
+        ws.merge_cells(start_row=row, start_column=10, end_row=row + 4, end_column=10)
+        ws.cell(row=row, column=11, value='=J' + str(row) + '-E' + str(row))
+        ws.merge_cells(start_row=row, start_column=11, end_row=row + 4, end_column=11)
+        ws.cell(row=row, column=12, value='=K' + str(row) + '/F' + str(row) + '*60')
+        ws.merge_cells(start_row=row, start_column=12, end_row=row + 4, end_column=12)
+        row += 5
+    wb.save('Database.xlsx')
+
+
 if __name__ == '__main__':
-    update_prices()
+    update_crafts()
+    make_table()
+    update_barters()
+    make_barters_table()
 
 # TODO: Попробовать новенькое:
 #   синхронный код
 #   Попробовать оптимизировать (https://medium.com/nuances-of-programming/как-ускорить-python-8df43f87ef6f)
 #   Перевести браузер в headless или хоть спрятать его
 # TODO: Доавить в таблицу:
-#   колонки продажи торговцу
 #   динамику цены
 #   графики изменения цены
 # TODO: Добавить сообщение оповещающее об ошибках
-# TODO: Подписать колонки в update_barters
+# TODO: Попробовать исправить ошибку с двойными крафтами
