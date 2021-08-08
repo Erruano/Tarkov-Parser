@@ -1,4 +1,6 @@
 import openpyxl
+from openpyxl.utils.dataframe import dataframe_to_rows
+import pandas as pd
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 
@@ -86,6 +88,18 @@ def update_prices():
         ws.cell(row, 4).value = '=C' + str(row) + '-B' + str(row)
         row += 1
     wb.save('Database.xlsx')
+
+
+def sort():
+    df = pd.read_excel('Database.xlsx', sheet_name='Crafts_nude')
+    df.sort_values(by='Profit/H', ascending=False)
+    wb = openpyxl.load_workbook('Database')
+    ws = wb.create_sheet('Sorted_Crafts')
+    for i in dataframe_to_rows(df, index=False, header=True):
+        ws.append(i)
+    wb.save('Database.xlsx')
+
+
 
 
 def update_crafts():
@@ -243,8 +257,8 @@ def update_barters():
     except KeyError:
         ws = wb.create_sheet('Barters_nude')
         columns = ['Module', 'Ingredient', 'Amount', 'Price', 'Ingredient', 'Amount', 'Price', 'Ingredient', 'Amount',
-                   'Price', 'Ingredient', 'Amount', 'Price', 'Ingredient', 'Amount', 'Price', 'Sum', 'Time(min)',
-                   'Name', 'Amount', 'Price', 'Sum', 'Profit', 'Profit/H']
+                   'Price', 'Ingredient', 'Amount', 'Price', 'Ingredient', 'Amount', 'Price', 'Sum', 'Name', 'Amount',
+                   'Price', 'Sum', 'Profit', 'Profit/H']
         for i in range(1, len(columns) + 1):
             ws.cell(1, i, value=columns[i - 1])
     row = 2
@@ -293,11 +307,11 @@ def update_barters():
         column += 1
         ws.cell(row=row, column=column, value='=Prices!' + str(result_price_coordinate))
         column += 1
-        ws.cell(row=row, column=column, value='=U' + str(row) + '*T' + str(row))
+        ws.cell(row=row, column=column, value='=S' + str(row) + '*T' + str(row))
         column += 1
-        ws.cell(row=row, column=column, value='=V' + str(row) + '-Q' + str(row))
+        ws.cell(row=row, column=column, value='=U' + str(row) + '-Q' + str(row))
         column += 1
-        ws.cell(row=row, column=column, value='=W' + str(row) + '/R' + str(row) + '*60')
+        ws.cell(row=row, column=column, value='=V' + str(row) + '/R' + str(row) + '*60')
         row += 1
     wb.save('Database.xlsx')
 
@@ -341,10 +355,7 @@ def make_barters_table():
 
 
 if __name__ == '__main__':
-    update_crafts()
-    make_table()
     update_barters()
-    make_barters_table()
 
 # TODO: Попробовать новенькое:
 #   синхронный код
@@ -355,3 +366,4 @@ if __name__ == '__main__':
 #   графики изменения цены
 # TODO: Добавить сообщение оповещающее об ошибках
 # TODO: Попробовать исправить ошибку с двойными крафтами
+# TODO: научиться избавляться от двойных пробелов в названиях придмета (seek_price)
