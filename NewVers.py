@@ -1,4 +1,6 @@
+import re
 import openpyxl
+import win32com.client
 from openpyxl.utils.dataframe import dataframe_to_rows
 import pandas as pd
 from selenium import webdriver
@@ -27,8 +29,9 @@ def isint(a):
 def seek_price(val):
     wb = openpyxl.load_workbook('Database.xlsx')
     ws = wb['Prices']
+    valu = re.sub(r'\s+', ' ', val)
     for i in range(1, ws.max_row + 1):
-        if ws.cell(row=i, column=1, ).value == val:
+        if ws.cell(row=i, column=1, ).value == valu:
             return ws.cell(row=i, column=2).coordinate
 
 
@@ -42,7 +45,7 @@ def seek_vendor_price(val):
 
 # Обновлние HTML
 def update_prices():
-    driver_path = r'C:\Program Files (x86)\Google\Chrome\chromedriver.exe'
+    driver_path = r'C:\Program Files\Google\Chrome\chromedriver.exe'
     driver = webdriver.Chrome(executable_path=driver_path)
     driver.get('https://tarkov-market.com/ru/')
     driver.find_element(By.XPATH, '//div[@class="cell pointer"]').click()
@@ -88,14 +91,33 @@ def update_prices():
         ws.cell(row, 4).value = '=C' + str(row) + '-B' + str(row)
         row += 1
     wb.save('Database.xlsx')
+    driver.quit()
 
 
 def sort():
-    df = pd.read_excel('Database.xlsx', sheet_name='Crafts_nude')
-    df.sort_values(by='Profit/H', ascending=False)
-    wb = openpyxl.load_workbook('Database')
-    ws = wb.create_sheet('Sorted_Crafts')
-    for i in dataframe_to_rows(df, index=False, header=True):
+    # Обновляет
+    xlapp = win32com.client.DispatchEx("Excel.Application")
+    wb = xlapp.workbooks.open(r'C:\Users\Zina\PycharmProjects\Tarkov-Parser\Database.xlsx')
+    wb.RefreshAll()
+    wb.Save()
+    xlapp.Quit()
+    # Сортирует
+    try:
+        df = pd.read_excel('Database.xlsx', sheet_name='Crafts_raw', engine='openpyxl')
+    except ValueError:
+        print('Лист "Crafts_raw" не найден, запущена функция "update_crafts"')
+        update_crafts()
+    sorted_df = df.sort_values(by='Profit/H', ascending=False)
+    # Сохраняет сортировку + очищает страницу
+    wb = openpyxl.load_workbook('Database.xlsx')
+    try:
+        ws = wb['Crafts_nude']
+    except KeyError:
+        ws = wb.create_sheet('Crafts_nude')
+    for i in range(2, ws.max_row + 1):
+        for y in range(1, ws.max_column + 1):
+            ws.cell(row=i, column=y).value = None
+    for i in dataframe_to_rows(sorted_df, index=False, header=True):
         ws.append(i)
     wb.save('Database.xlsx')
 
@@ -103,7 +125,7 @@ def sort():
 
 
 def update_crafts():
-    driver_path = r'C:\Program Files (x86)\Google\Chrome\chromedriver.exe'
+    driver_path = r'C:\Program Files\Google\Chrome\chromedriver.exe'
     driver = webdriver.Chrome(executable_path=driver_path)
     driver.get('https://tarkov-market.com/ru/hideout')
     while True:
@@ -116,9 +138,9 @@ def update_crafts():
     cards = driver.find_elements(By.XPATH, '//div[@class="card recipe"]')
     wb = openpyxl.load_workbook('Database.xlsx')
     try:
-        ws = wb['Crafts_nude']
+        ws = wb['Crafts_raw']
     except KeyError:
-        ws = wb.create_sheet('Crafts_nude')
+        ws = wb.create_sheet('Crafts_raw')
         columns = ['Module', 'Ingredient', 'Amount', 'Price', 'Ingredient', 'Amount', 'Price', 'Ingredient', 'Amount',
                    'Price', 'Ingredient', 'Amount', 'Price', 'Ingredient', 'Amount', 'Price', 'Sum', 'Time(min)',
                    'Name', 'Amount', 'Price', 'Sum', 'Profit', 'Profit/H']
@@ -196,6 +218,7 @@ def update_crafts():
         ws.cell(row=row, column=column, value='=W' + str(row) + '/R' + str(row) + '*60')
         row += 1
     wb.save('Database.xlsx')
+    driver.quit()
 
 
 def make_table():
@@ -237,7 +260,7 @@ def make_table():
 
 
 def update_barters():
-    driver_path = r'C:\Program Files (x86)\Google\Chrome\chromedriver.exe'
+    driver_path = r'C:\Program Files\Google\Chrome\chromedriver.exe'
     driver = webdriver.Chrome(executable_path=driver_path)
     driver.get('https://tarkov-market.com/ru/barter')
     while True:
@@ -246,9 +269,6 @@ def update_barters():
         except Exception:
             driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
         else:
-            with open('C:/Users/Karapuzo/PycharmProjects/Tarkov-Parser/HTMLs/CraftHTML.txt', 'w',
-                      encoding="utf-8") as data:
-                data.write(driver.page_source)
             break
     cards = driver.find_elements(By.XPATH, '//div[@class="card recipe"]')
     wb = openpyxl.load_workbook('Database.xlsx')
@@ -314,6 +334,7 @@ def update_barters():
         ws.cell(row=row, column=column, value='=V' + str(row) + '/R' + str(row) + '*60')
         row += 1
     wb.save('Database.xlsx')
+    driver.quit()
 
 
 def make_barters_table():
@@ -355,7 +376,7 @@ def make_barters_table():
 
 
 if __name__ == '__main__':
-    update_barters()
+    make_table()
 
 # TODO: Попробовать новенькое:
 #   синхронный код
@@ -364,6 +385,6 @@ if __name__ == '__main__':
 # TODO: Доавить в таблицу:
 #   динамику цены
 #   графики изменения цены
-# TODO: Добавить сообщение оповещающее об ошибках
+# TODO: Предотвращать возможные ошибки
 # TODO: Попробовать исправить ошибку с двойными крафтами
 # TODO: научиться избавляться от двойных пробелов в названиях придмета (seek_price)
