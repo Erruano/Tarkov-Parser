@@ -107,6 +107,7 @@ def sort():
     except ValueError:
         print('Лист "Crafts_raw" не найден, запущена функция "update_crafts"')
         update_crafts()
+        df = pd.read_excel('Database.xlsx', sheet_name='Crafts_raw', engine='openpyxl')
     sorted_df = df.sort_values(by='Profit/H', ascending=False)
     # Сохраняет сортировку + очищает страницу
     wb = openpyxl.load_workbook('Database.xlsx')
@@ -361,7 +362,7 @@ def make_barters_table():
         ws.cell(row=row, column=9, value='=G' + str(row) + '*H' + str(row))
         ws.merge_cells(start_row=row, start_column=9, end_row=row + 4, end_column=9)
         ws.cell(row=row, column=10, value='=I' + str(row) + '-E' + str(row))
-        ws.merge_cells(start_row=row, start_column=10, end_row=row + 4, end_column=11)
+        ws.merge_cells(start_row=row, start_column=10, end_row=row + 4, end_column=10)
         row += 5
     wb.save('Database.xlsx')
 
