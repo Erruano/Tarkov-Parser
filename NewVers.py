@@ -122,8 +122,6 @@ def sort():
     wb.save('Database.xlsx')
 
 
-
-
 def update_crafts():
     driver_path = r'C:\Program Files\Google\Chrome\chromedriver.exe'
     driver = webdriver.Chrome(executable_path=driver_path)
@@ -278,7 +276,7 @@ def update_barters():
         ws = wb.create_sheet('Barters_nude')
         columns = ['Module', 'Ingredient', 'Amount', 'Price', 'Ingredient', 'Amount', 'Price', 'Ingredient', 'Amount',
                    'Price', 'Ingredient', 'Amount', 'Price', 'Ingredient', 'Amount', 'Price', 'Sum', 'Name', 'Amount',
-                   'Price', 'Sum', 'Profit', 'Profit/H']
+                   'Price', 'Sum', 'Profit']
         for i in range(1, len(columns) + 1):
             ws.cell(1, i, value=columns[i - 1])
     row = 2
@@ -330,8 +328,6 @@ def update_barters():
         ws.cell(row=row, column=column, value='=S' + str(row) + '*T' + str(row))
         column += 1
         ws.cell(row=row, column=column, value='=U' + str(row) + '-Q' + str(row))
-        column += 1
-        ws.cell(row=row, column=column, value='=V' + str(row) + '/R' + str(row) + '*60')
         row += 1
     wb.save('Database.xlsx')
     driver.quit()
@@ -343,8 +339,7 @@ def make_barters_table():
         ws = wb['Barters']
     except KeyError:
         ws = wb.create_sheet('Barters')
-        columns = ['Module', 'Ingredients', 'Amount', 'Price', 'Sum', 'Time(min)',
-                   'Name', 'Amount', 'Price', 'Sum', 'Profit', 'Profit/H']
+        columns = ['Module', 'Ingredients', 'Amount', 'Price', 'Sum', 'Name', 'Amount', 'Price', 'Sum', 'Profit']
         for i in range(1, len(columns) + 1):
             ws.cell(1, i, value=columns[i - 1])
     row = 2
@@ -363,20 +358,16 @@ def make_barters_table():
         ws.merge_cells(start_row=row, start_column=7, end_row=row + 4, end_column=7)
         ws.cell(row=row, column=8, value='=Barters_nude!T' + str(i + 2))
         ws.merge_cells(start_row=row, start_column=8, end_row=row + 4, end_column=8)
-        ws.cell(row=row, column=9, value='=Barters_nude!U' + str(i + 2))
+        ws.cell(row=row, column=9, value='=G' + str(row) + '*H' + str(row))
         ws.merge_cells(start_row=row, start_column=9, end_row=row + 4, end_column=9)
-        ws.cell(row=row, column=10, value='=I' + str(row) + '*H' + str(row))
-        ws.merge_cells(start_row=row, start_column=10, end_row=row + 4, end_column=10)
-        ws.cell(row=row, column=11, value='=J' + str(row) + '-E' + str(row))
-        ws.merge_cells(start_row=row, start_column=11, end_row=row + 4, end_column=11)
-        ws.cell(row=row, column=12, value='=K' + str(row) + '/F' + str(row) + '*60')
-        ws.merge_cells(start_row=row, start_column=12, end_row=row + 4, end_column=12)
+        ws.cell(row=row, column=10, value='=I' + str(row) + '-E' + str(row))
+        ws.merge_cells(start_row=row, start_column=10, end_row=row + 4, end_column=11)
         row += 5
     wb.save('Database.xlsx')
 
 
 if __name__ == '__main__':
-    make_table()
+    make_barters_table()
 
 # TODO: Попробовать новенькое:
 #   синхронный код
