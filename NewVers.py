@@ -17,6 +17,14 @@ def find_digit(a):
     return num
 
 
+def update_table():
+    xlapp = win32com.client.DispatchEx("Excel.Application")
+    wb = xlapp.workbooks.open(r'C:\Users\Zina\PycharmProjects\Tarkov-Parser\Database.xlsx')
+    wb.RefreshAll()
+    wb.Save()
+    xlapp.Quit()
+
+
 # Является ли переменная числом
 def isint(a):
     try:
@@ -94,13 +102,8 @@ def update_prices():
     driver.quit()
 
 
-def sort():
-    # Обновляет
-    xlapp = win32com.client.DispatchEx("Excel.Application")
-    wb = xlapp.workbooks.open(r'C:\Users\Zina\PycharmProjects\Tarkov-Parser\Database.xlsx')
-    wb.RefreshAll()
-    wb.Save()
-    xlapp.Quit()
+def sort_crafts():
+    update_table()
     # Сортирует
     try:
         df = pd.read_excel('Database.xlsx', sheet_name='Crafts_raw', engine='openpyxl')
@@ -115,6 +118,31 @@ def sort():
         ws = wb['Crafts_nude']
     except KeyError:
         ws = wb.create_sheet('Crafts_nude')
+    for i in range(2, ws.max_row + 1):
+        for y in range(1, ws.max_column + 1):
+            ws.cell(row=i, column=y).value = None
+    for i in dataframe_to_rows(sorted_df, index=False, header=True):
+        ws.append(i)
+    wb.save('Database.xlsx')
+
+
+def sort_barters():
+    update_table()
+    # Сортирует
+    try:
+        df = pd.read_excel('Database.xlsx', sheet_name='Barters_raw', engine='openpyxl')
+    except ValueError:
+        print('Лист "Barters_raw" не найден, запущена функция "update_crafts"')
+        update_barters()
+        df = pd.read_excel('Database.xlsx', sheet_name='Barters_raw', engine='openpyxl')
+    sorted_df = df.sort_values(by='Profit', ascending=False)
+    print(sorted_df)
+    # Сохраняет сортировку + очищает страницу
+    wb = openpyxl.load_workbook('Database.xlsx')
+    try:
+        ws = wb['Barters_nude']
+    except KeyError:
+        ws = wb.create_sheet('Barters_nude')
     for i in range(2, ws.max_row + 1):
         for y in range(1, ws.max_column + 1):
             ws.cell(row=i, column=y).value = None
@@ -272,9 +300,9 @@ def update_barters():
     cards = driver.find_elements(By.XPATH, '//div[@class="card recipe"]')
     wb = openpyxl.load_workbook('Database.xlsx')
     try:
-        ws = wb['Barters_nude']
+        ws = wb['Barters_raw']
     except KeyError:
-        ws = wb.create_sheet('Barters_nude')
+        ws = wb.create_sheet('Barters_raw')
         columns = ['Module', 'Ingredient', 'Amount', 'Price', 'Ingredient', 'Amount', 'Price', 'Ingredient', 'Amount',
                    'Price', 'Ingredient', 'Amount', 'Price', 'Ingredient', 'Amount', 'Price', 'Sum', 'Name', 'Amount',
                    'Price', 'Sum', 'Profit']
@@ -368,6 +396,12 @@ def make_barters_table():
 
 
 if __name__ == '__main__':
+    update_prices()
+    update_crafts()
+    sort_crafts()
+    make_table()
+    update_barters()
+    sort_barters()
     make_barters_table()
 
 # TODO: Попробовать новенькое:
@@ -380,3 +414,4 @@ if __name__ == '__main__':
 # TODO: Предотвращать возможные ошибки
 # TODO: Попробовать исправить ошибку с двойными крафтами
 # TODO: научиться избавляться от двойных пробелов в названиях придмета (seek_price)
+# TODO: Добавить к Профиту столбец профита от продажи торговцу
