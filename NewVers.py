@@ -5,6 +5,7 @@ from openpyxl.utils.dataframe import dataframe_to_rows
 import pandas as pd
 from selenium import webdriver
 from selenium.webdriver.common.by import By
+import xlwings as xw
 
 
 def find_digit(a):
@@ -17,12 +18,18 @@ def find_digit(a):
     return num
 
 
+def clear_sheet(sheet_name):
+    wb = xw.books['Database.xlsx']
+    ws = xw.sheets[sheet_name]
+    ws.clear()
+
+
 def update_table():
-    xlapp = win32com.client.DispatchEx("Excel.Application")
-    wb = xlapp.workbooks.open(r'C:\Users\Zina\PycharmProjects\Tarkov-Parser\Database.xlsx')
+    excel = win32com.client.DispatchEx("Excel.Application")
+    wb = excel.workbooks.Open(r'C:\Users\Karapuzo\PycharmProjects\Tarkov-Parser\Database.xlsx')
     wb.RefreshAll()
     wb.Save()
-    xlapp.Quit()
+    excel.Quit()
 
 
 # Является ли переменная числом
@@ -53,7 +60,7 @@ def seek_vendor_price(val):
 
 # Обновлние HTML
 def update_prices():
-    driver_path = r'C:\Program Files\Google\Chrome\chromedriver.exe'
+    driver_path = r'C:\Program Files (x86)\Google\Chrome\chromedriver.exe'
     driver = webdriver.Chrome(executable_path=driver_path)
     driver.get('https://tarkov-market.com/ru/')
     driver.find_element(By.XPATH, '//div[@class="cell pointer"]').click()
@@ -118,7 +125,7 @@ def sort_crafts():
         ws = wb['Crafts_nude']
     except KeyError:
         ws = wb.create_sheet('Crafts_nude')
-    for i in range(2, ws.max_row + 1):
+    for i in range(1, ws.max_row + 1):
         for y in range(1, ws.max_column + 1):
             ws.cell(row=i, column=y).value = None
     for i in dataframe_to_rows(sorted_df, index=False, header=True):
@@ -143,16 +150,14 @@ def sort_barters():
         ws = wb['Barters_nude']
     except KeyError:
         ws = wb.create_sheet('Barters_nude')
-    for i in range(2, ws.max_row + 1):
-        for y in range(1, ws.max_column + 1):
-            ws.cell(row=i, column=y).value = None
+    clear_sheet('Barters_nude')
     for i in dataframe_to_rows(sorted_df, index=False, header=True):
         ws.append(i)
     wb.save('Database.xlsx')
 
 
 def update_crafts():
-    driver_path = r'C:\Program Files\Google\Chrome\chromedriver.exe'
+    driver_path = r'C:\Program Files (x86)\Google\Chrome\chromedriver.exe'
     driver = webdriver.Chrome(executable_path=driver_path)
     driver.get('https://tarkov-market.com/ru/hideout')
     while True:
@@ -287,7 +292,7 @@ def make_table():
 
 
 def update_barters():
-    driver_path = r'C:\Program Files\Google\Chrome\chromedriver.exe'
+    driver_path = r'C:\Program Files (x86)\Google\Chrome\chromedriver.exe'
     driver = webdriver.Chrome(executable_path=driver_path)
     driver.get('https://tarkov-market.com/ru/barter')
     while True:
@@ -305,7 +310,7 @@ def update_barters():
         ws = wb.create_sheet('Barters_raw')
         columns = ['Module', 'Ingredient', 'Amount', 'Price', 'Ingredient', 'Amount', 'Price', 'Ingredient', 'Amount',
                    'Price', 'Ingredient', 'Amount', 'Price', 'Ingredient', 'Amount', 'Price', 'Sum', 'Name', 'Amount',
-                   'Price', 'Sum', 'Profit']
+                   'Price', 'Vendor Price', 'Sum', 'Vendor Sum', 'Profit', 'Instant Profit']
         for i in range(1, len(columns) + 1):
             ws.cell(1, i, value=columns[i - 1])
     row = 2
@@ -331,6 +336,8 @@ def update_barters():
             'textContent')
         result_price_coordinate = seek_price(driver.find_element(By.XPATH, '//div[@class="card recipe"][' + str(
             i) + ']//div[@class="d-flex only mb-15"][' + str(len(names)) + ']//span').get_attribute('textContent'))
+        result_vendor_price_coordinate = seek_vendor_price(driver.find_element(By.XPATH, '//div[@class="card recipe"][' + str(
+            i) + ']//div[@class="d-flex only mb-15"][' + str(len(names)) + ']//span').get_attribute('textContent'))
         column = 1
         ws.cell(row=row, column=column, value=trader)
         column += 1
@@ -354,9 +361,15 @@ def update_barters():
         column += 1
         ws.cell(row=row, column=column, value='=Prices!' + str(result_price_coordinate))
         column += 1
+        ws.cell(row=row, column=column, value='=Prices!' + str(result_vendor_price_coordinate))
+        column += 1
         ws.cell(row=row, column=column, value='=S' + str(row) + '*T' + str(row))
         column += 1
-        ws.cell(row=row, column=column, value='=U' + str(row) + '-Q' + str(row))
+        ws.cell(row=row, column=column, value='=S' + str(row) + '*U' + str(row))
+        column += 1
+        ws.cell(row=row, column=column, value='=V' + str(row) + '-Q' + str(row))
+        column += 1
+        ws.cell(row=row, column=column, value='=W' + str(row) + '-Q' + str(row))
         row += 1
     wb.save('Database.xlsx')
     driver.quit()
@@ -396,13 +409,7 @@ def make_barters_table():
 
 
 if __name__ == '__main__':
-    update_prices()
-    update_crafts()
     sort_crafts()
-    make_table()
-    update_barters()
-    sort_barters()
-    make_barters_table()
 
 # TODO: Попробовать новенькое:
 #   синхронный код
