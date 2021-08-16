@@ -25,6 +25,7 @@ def update_table():
     xlapp.Quit()
 
 
+# Является ли переменная числом
 def isint(a):
     try:
         int(a)
@@ -33,73 +34,24 @@ def isint(a):
         return False
 
 
-def seek_price(request):
+def seek_price(val):
     wb = openpyxl.load_workbook('Database.xlsx')
     ws = wb['Prices']
-    name = re.sub(r'\s+', ' ', request)
+    valu = re.sub(r'\s+', ' ', val)
     for i in range(1, ws.max_row + 1):
-        if ws.cell(row=i, column=1, ).value == name:
+        if ws.cell(row=i, column=1, ).value == valu:
             return ws.cell(row=i, column=2).coordinate
 
 
-def seek_vendor_price(request):
+def seek_vendor_price(val):
     wb = openpyxl.load_workbook('Database.xlsx')
     ws = wb['Prices']
-    name = re.sub(r'\s+', ' ', request)
     for i in range(1, ws.max_row + 1):
-        if ws.cell(row=i, column=1, ).value == name:
+        if ws.cell(row=i, column=1, ).value == val:
             return ws.cell(row=i, column=3).coordinate
 
 
-def sort_crafts():
-    update_table()
-    # Сортирует
-    try:
-        df = pd.read_excel('Database.xlsx', sheet_name='Crafts_raw', engine='openpyxl')
-    except ValueError:
-        print('Лист "Crafts_raw" не найден, запущена функция "update_crafts"')
-        update_crafts()
-        df = pd.read_excel('Database.xlsx', sheet_name='Crafts_raw', engine='openpyxl')
-    sorted_df = df.sort_values(by='Profit/H', ascending=False)
-    # Сохраняет сортировку + очищает страницу
-    wb = openpyxl.load_workbook('Database.xlsx')
-    try:
-        ws = wb['Crafts_nude']
-    except KeyError:
-        ws = wb.create_sheet('Crafts_nude')
-    for i in range(2, ws.max_row + 1):
-        for y in range(1, ws.max_column + 1):
-            ws.cell(row=i, column=y).value = None
-    for i in dataframe_to_rows(sorted_df, index=False, header=True):
-        ws.append(i)
-    wb.save('Database.xlsx')
-
-
-def sort_barters():
-    update_table()
-    # Сортирует
-    try:
-        df = pd.read_excel('Database.xlsx', sheet_name='Barters_raw', engine='openpyxl')
-    except ValueError:
-        print('Лист "Barters_raw" не найден, запущена функция "update_crafts"')
-        update_barters()
-        df = pd.read_excel('Database.xlsx', sheet_name='Barters_raw', engine='openpyxl')
-    sorted_df = df.sort_values(by='Instant Profit', ascending=False)
-    print(sorted_df)
-    # Сохраняет сортировку + очищает страницу
-    wb = openpyxl.load_workbook('Database.xlsx')
-    try:
-        ws = wb['Barters_nude']
-    except KeyError:
-        ws = wb.create_sheet('Barters_nude')
-    for i in range(2, ws.max_row + 1):
-        for y in range(1, ws.max_column + 1):
-            ws.cell(row=i, column=y).value = None
-    for i in dataframe_to_rows(sorted_df, index=False, header=True):
-        ws.append(i)
-    wb.save('Database.xlsx')
-
-
+# Обновлние HTML
 def update_prices():
     driver_path = r'C:\Program Files\Google\Chrome\chromedriver.exe'
     driver = webdriver.Chrome(executable_path=driver_path)
@@ -148,6 +100,55 @@ def update_prices():
         row += 1
     wb.save('Database.xlsx')
     driver.quit()
+
+
+def sort_crafts():
+    update_table()
+    # Сортирует
+    try:
+        df = pd.read_excel('Database.xlsx', sheet_name='Crafts_raw', engine='openpyxl')
+    except ValueError:
+        print('Лист "Crafts_raw" не найден, запущена функция "update_crafts"')
+        update_crafts()
+        df = pd.read_excel('Database.xlsx', sheet_name='Crafts_raw', engine='openpyxl')
+    sorted_df = df.sort_values(by='Profit/H', ascending=False)
+    # Сохраняет сортировку + очищает страницу
+    wb = openpyxl.load_workbook('Database.xlsx')
+    try:
+        ws = wb['Crafts_nude']
+    except KeyError:
+        ws = wb.create_sheet('Crafts_nude')
+    for i in range(2, ws.max_row + 1):
+        for y in range(1, ws.max_column + 1):
+            ws.cell(row=i, column=y).value = None
+    for i in dataframe_to_rows(sorted_df, index=False, header=True):
+        ws.append(i)
+    wb.save('Database.xlsx')
+
+
+def sort_barters():
+    update_table()
+    # Сортирует
+    try:
+        df = pd.read_excel('Database.xlsx', sheet_name='Barters_raw', engine='openpyxl')
+    except ValueError:
+        print('Лист "Barters_raw" не найден, запущена функция "update_crafts"')
+        update_barters()
+        df = pd.read_excel('Database.xlsx', sheet_name='Barters_raw', engine='openpyxl')
+    sorted_df = df.sort_values(by='Profit', ascending=False)
+    print(sorted_df)
+    # Сохраняет сортировку + очищает страницу
+    wb = openpyxl.load_workbook('Database.xlsx')
+    try:
+        ws = wb['Barters_nude']
+    except KeyError:
+        ws = wb.create_sheet('Barters_nude')
+    for i in range(2, ws.max_row + 1):
+        for y in range(1, ws.max_column + 1):
+            ws.cell(row=i, column=y).value = None
+    for i in dataframe_to_rows(sorted_df, index=False, header=True):
+        ws.append(i)
+    wb.save('Database.xlsx')
 
 
 def update_crafts():
@@ -247,90 +248,6 @@ def update_crafts():
     driver.quit()
 
 
-def update_barters():
-    driver_path = r'C:\Program Files\Google\Chrome\chromedriver.exe'
-    driver = webdriver.Chrome(executable_path=driver_path)
-    driver.get('https://tarkov-market.com/ru/barter')
-    while True:
-        try:
-            driver.find_element(By.XPATH, '//span[@class="big"][text()="Бронежилет 6Б43 6А Забрало-Ш (0/85)"]')
-        except Exception:
-            driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
-        else:
-            break
-    cards = driver.find_elements(By.XPATH, '//div[@class="card recipe"]')
-    wb = openpyxl.load_workbook('Database.xlsx')
-    try:
-        ws = wb['Barters_raw']
-    except KeyError:
-        ws = wb.create_sheet('Barters_raw')
-        columns = ['Module', 'Ingredient', 'Amount', 'Price', 'Ingredient', 'Amount', 'Price', 'Ingredient', 'Amount',
-                   'Price', 'Ingredient', 'Amount', 'Price', 'Ingredient', 'Amount', 'Price', 'Sum', 'Name', 'Amount',
-                   'Price', 'Vendor Price', 'Sum', 'Vendor Sum', 'Profit', 'Instant Profit']
-        for i in range(1, len(columns) + 1):
-            ws.cell(1, i, value=columns[i - 1])
-    row = 2
-    for i in range(1, len(cards) + 1):
-        ingredients = []
-        in_amount = []
-        prices_coordinates = []
-        trader = driver.find_element(By.XPATH, '//div[@class="card recipe"][' + str(i) +
-                                     ']//div[@class="big"]').get_attribute('textContent')
-        names = driver.find_elements(By.XPATH, '//div[@class="card recipe"][' + str(i) + ']//span[@class="big"]')
-        for y in range(1, len(names)):
-            ingredients.append(driver.find_element(By.XPATH, '//div[@class="card recipe"][' + str(
-                i) + ']//div[@class="d-flex only mb-15"][' + str(y) + ']//span').get_attribute('textContent'))
-            in_amount.append(driver.find_element(By.XPATH, '//div[@class="card recipe"][' + str(
-                i) + ']//div[@class="d-flex only mb-15"][' + str(y) + ']//div[@class="image"]/div').get_attribute(
-                'textContent'))
-            prices_coordinates.append(seek_price(driver.find_element(By.XPATH, '//div[@class="card recipe"][' + str(
-                i) + ']//div[@class="d-flex only mb-15"][' + str(y) + ']//span').get_attribute('textContent')))
-        result = driver.find_element(By.XPATH, '//div[@class="card recipe"][' + str(
-            i) + ']//div[@class="d-flex only mb-15"][' + str(len(names)) + ']//span').get_attribute('textContent')
-        result_amount = driver.find_element(By.XPATH, '//div[@class="card recipe"][' + str(
-            i) + ']//div[@class="d-flex only mb-15"][' + str(len(names)) + ']//div[@class="image"]/div').get_attribute(
-            'textContent')
-        result_price_coordinate = seek_price(driver.find_element(By.XPATH, '//div[@class="card recipe"][' + str(
-            i) + ']//div[@class="d-flex only mb-15"][' + str(len(names)) + ']//span').get_attribute('textContent'))
-        result_vendor_price_coordinate = seek_vendor_price(driver.find_element(By.XPATH, '//div[@class="card recipe"][' + str(
-            i) + ']//div[@class="d-flex only mb-15"][' + str(len(names)) + ']//span').get_attribute('textContent'))
-        column = 1
-        ws.cell(row=row, column=column, value=trader)
-        column += 1
-        for y in range(1, 6):
-            try:
-                ws.cell(row=row, column=column, value=ingredients[y - 1])
-                column += 1
-                ws.cell(row=row, column=column, value=find_digit(in_amount[y - 1]))
-                column += 1
-                ws.cell(row=row, column=column, value='=Prices!' + prices_coordinates[y - 1])
-                column += 1
-            except IndexError:
-                column += 3
-        ws.cell(row=row, column=column, value=(
-                '=D' + str(row) + '*C' + str(row) + '+G' + str(row) + '*F' + str(row) + '+J' + str(row) +
-                '*I' + str(row) + '+M' + str(row) + '*L' + str(row) + '+P' + str(row) + '*O' + str(row)))
-        column += 1
-        ws.cell(row=row, column=column, value=result)
-        column += 1
-        ws.cell(row=row, column=column, value=find_digit(result_amount))
-        column += 1
-        ws.cell(row=row, column=column, value='=Prices!' + str(result_price_coordinate))
-        column += 1
-        ws.cell(row=row, column=column, value='=Prices!' + str(result_vendor_price_coordinate))
-        column += 1
-        ws.cell(row=row, column=column, value='=S' + str(row) + '*T' + str(row))
-        column += 1
-        ws.cell(row=row, column=column, value='=S' + str(row) + '*U' + str(row))
-        column += 1
-        ws.cell(row=row, column=column, value='=V' + str(row) + '-Q' + str(row))
-        column += 1
-        ws.cell(row=row, column=column, value='=X' + str(row) + '-Q' + str(row))
-        row += 1
-    wb.save('Database.xlsx')
-    driver.quit()
-
-
 def make_table():
     wb = openpyxl.load_workbook('Database.xlsx')
     try:
@@ -369,6 +286,82 @@ def make_table():
     wb.save('Database.xlsx')
 
 
+def update_barters():
+    driver_path = r'C:\Program Files\Google\Chrome\chromedriver.exe'
+    driver = webdriver.Chrome(executable_path=driver_path)
+    driver.get('https://tarkov-market.com/ru/barter')
+    while True:
+        try:
+            driver.find_element(By.XPATH, '//span[@class="big"][text()="Бронежилет 6Б43 6А Забрало-Ш (0/85)"]')
+        except Exception:
+            driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
+        else:
+            break
+    cards = driver.find_elements(By.XPATH, '//div[@class="card recipe"]')
+    wb = openpyxl.load_workbook('Database.xlsx')
+    try:
+        ws = wb['Barters_raw']
+    except KeyError:
+        ws = wb.create_sheet('Barters_raw')
+        columns = ['Module', 'Ingredient', 'Amount', 'Price', 'Ingredient', 'Amount', 'Price', 'Ingredient', 'Amount',
+                   'Price', 'Ingredient', 'Amount', 'Price', 'Ingredient', 'Amount', 'Price', 'Sum', 'Name', 'Amount',
+                   'Price', 'Sum', 'Profit']
+        for i in range(1, len(columns) + 1):
+            ws.cell(1, i, value=columns[i - 1])
+    row = 2
+    for i in range(1, len(cards) + 1):
+        ingredients = []
+        in_amount = []
+        prices_coordinates = []
+        trader = driver.find_element(By.XPATH, '//div[@class="card recipe"][' + str(i) +
+                                     ']//div[@class="big"]').get_attribute('textContent')
+        names = driver.find_elements(By.XPATH, '//div[@class="card recipe"][' + str(i) + ']//span[@class="big"]')
+        for y in range(1, len(names)):
+            ingredients.append(driver.find_element(By.XPATH, '//div[@class="card recipe"][' + str(
+                i) + ']//div[@class="d-flex only mb-15"][' + str(y) + ']//span').get_attribute('textContent'))
+            in_amount.append(driver.find_element(By.XPATH, '//div[@class="card recipe"][' + str(
+                i) + ']//div[@class="d-flex only mb-15"][' + str(y) + ']//div[@class="image"]/div').get_attribute(
+                'textContent'))
+            prices_coordinates.append(seek_price(driver.find_element(By.XPATH, '//div[@class="card recipe"][' + str(
+                i) + ']//div[@class="d-flex only mb-15"][' + str(y) + ']//span').get_attribute('textContent')))
+        result = driver.find_element(By.XPATH, '//div[@class="card recipe"][' + str(
+            i) + ']//div[@class="d-flex only mb-15"][' + str(len(names)) + ']//span').get_attribute('textContent')
+        result_amount = driver.find_element(By.XPATH, '//div[@class="card recipe"][' + str(
+            i) + ']//div[@class="d-flex only mb-15"][' + str(len(names)) + ']//div[@class="image"]/div').get_attribute(
+            'textContent')
+        result_price_coordinate = seek_price(driver.find_element(By.XPATH, '//div[@class="card recipe"][' + str(
+            i) + ']//div[@class="d-flex only mb-15"][' + str(len(names)) + ']//span').get_attribute('textContent'))
+        column = 1
+        ws.cell(row=row, column=column, value=trader)
+        column += 1
+        for y in range(1, 6):
+            try:
+                ws.cell(row=row, column=column, value=ingredients[y - 1])
+                column += 1
+                ws.cell(row=row, column=column, value=find_digit(in_amount[y - 1]))
+                column += 1
+                ws.cell(row=row, column=column, value='=Prices!' + prices_coordinates[y - 1])
+                column += 1
+            except IndexError:
+                column += 3
+        ws.cell(row=row, column=column, value=(
+                '=D' + str(row) + '*C' + str(row) + '+G' + str(row) + '*F' + str(row) + '+J' + str(row) +
+                '*I' + str(row) + '+M' + str(row) + '*L' + str(row) + '+P' + str(row) + '*O' + str(row)))
+        column += 1
+        ws.cell(row=row, column=column, value=result)
+        column += 1
+        ws.cell(row=row, column=column, value=find_digit(result_amount))
+        column += 1
+        ws.cell(row=row, column=column, value='=Prices!' + str(result_price_coordinate))
+        column += 1
+        ws.cell(row=row, column=column, value='=S' + str(row) + '*T' + str(row))
+        column += 1
+        ws.cell(row=row, column=column, value='=U' + str(row) + '-Q' + str(row))
+        row += 1
+    wb.save('Database.xlsx')
+    driver.quit()
+
+
 def make_barters_table():
     wb = openpyxl.load_workbook('Database.xlsx')
     try:
@@ -403,7 +396,13 @@ def make_barters_table():
 
 
 if __name__ == '__main__':
+    update_prices()
+    update_crafts()
+    sort_crafts()
+    make_table()
+    update_barters()
     sort_barters()
+    make_barters_table()
 
 # TODO: Попробовать новенькое:
 #   синхронный код
