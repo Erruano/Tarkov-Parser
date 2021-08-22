@@ -1,10 +1,34 @@
 import re
+import sys
+from PyQt5 import QtWidgets
 import openpyxl
 import win32com.client
 from openpyxl.utils.dataframe import dataframe_to_rows
 import pandas as pd
 from selenium import webdriver
 from selenium.webdriver.common.by import By
+import gui
+
+
+class ExampleApp(QtWidgets.QMainWindow, gui.Ui_MainWindow):
+    def __init__(self):
+        super().__init__()
+        self.setupUi(self)
+        self.operations()
+
+
+    def operations(self):
+        self.btn_refresh_price.clicked.connect(update_prices())
+        self.btn_make_crafts.clicked.connect(update_crafts())
+        self.btn_make_barters.clicked.connect(update_barters())
+
+
+
+def app():
+    app = QtWidgets.QApplication(sys.argv)
+    window = ExampleApp()
+    window.show()
+    app.exec()
 
 
 def find_digit(a):
@@ -19,7 +43,7 @@ def find_digit(a):
 
 def update_table():
     xlapp = win32com.client.DispatchEx("Excel.Application")
-    wb = xlapp.workbooks.open(r'C:\Users\Zina\PycharmProjects\Tarkov-Parser\Database.xlsx')
+    wb = xlapp.workbooks.Open(r'C:\Users\Karapuzo\PycharmProjects\Tarkov-Parser\Database.xlsx')
     wb.RefreshAll()
     wb.Save()
     xlapp.Quit()
@@ -60,6 +84,8 @@ def sort_crafts():
         print('Лист "Crafts_raw" не найден, запущена функция "update_crafts"')
         update_crafts()
         df = pd.read_excel('Database.xlsx', sheet_name='Crafts_raw', engine='openpyxl')
+    print('Напишите по какому столбцу будем сортировать таблицу бартеров (Profit или Profit/H)')
+    by = str(input())
     sorted_df = df.sort_values(by='Profit/H', ascending=False)
     # Сохраняет сортировку + очищает страницу
     wb = openpyxl.load_workbook('Database.xlsx')
@@ -67,12 +93,13 @@ def sort_crafts():
         ws = wb['Crafts_nude']
     except KeyError:
         ws = wb.create_sheet('Crafts_nude')
-    for i in range(2, ws.max_row + 1):
+    for i in range(1, ws.max_row + 1):
         for y in range(1, ws.max_column + 1):
             ws.cell(row=i, column=y).value = None
     for i in dataframe_to_rows(sorted_df, index=False, header=True):
         ws.append(i)
     wb.save('Database.xlsx')
+    make_table()
 
 
 def sort_barters():
@@ -84,24 +111,27 @@ def sort_barters():
         print('Лист "Barters_raw" не найден, запущена функция "update_crafts"')
         update_barters()
         df = pd.read_excel('Database.xlsx', sheet_name='Barters_raw', engine='openpyxl')
-    sorted_df = df.sort_values(by='Instant Profit', ascending=False)
-    print(sorted_df)
+    print('Напишите по какому столбцу будем сортировать таблицу бартеров (Profit или Instant Profit)')
+    by = str(input())
+    sorted_df = df.sort_values(by=by, ascending=False)
     # Сохраняет сортировку + очищает страницу
     wb = openpyxl.load_workbook('Database.xlsx')
     try:
         ws = wb['Barters_nude']
     except KeyError:
         ws = wb.create_sheet('Barters_nude')
-    for i in range(2, ws.max_row + 1):
+    for i in range(1, ws.max_row + 1):
         for y in range(1, ws.max_column + 1):
             ws.cell(row=i, column=y).value = None
     for i in dataframe_to_rows(sorted_df, index=False, header=True):
+        print(i)
         ws.append(i)
     wb.save('Database.xlsx')
+    make_barters_table()
 
 
 def update_prices():
-    driver_path = r'C:\Program Files\Google\Chrome\chromedriver.exe'
+    driver_path = r'C:\Program Files (x86)\Google\Chrome\chromedriver.exe'
     driver = webdriver.Chrome(executable_path=driver_path)
     driver.get('https://tarkov-market.com/ru/')
     driver.find_element(By.XPATH, '//div[@class="cell pointer"]').click()
@@ -151,7 +181,7 @@ def update_prices():
 
 
 def update_crafts():
-    driver_path = r'C:\Program Files\Google\Chrome\chromedriver.exe'
+    driver_path = r'C:\Program Files (x86)\Google\Chrome\chromedriver.exe'
     driver = webdriver.Chrome(executable_path=driver_path)
     driver.get('https://tarkov-market.com/ru/hideout')
     while True:
@@ -245,10 +275,12 @@ def update_crafts():
         row += 1
     wb.save('Database.xlsx')
     driver.quit()
+    sort_crafts()
+    sort_barters()
 
 
 def update_barters():
-    driver_path = r'C:\Program Files\Google\Chrome\chromedriver.exe'
+    driver_path = r'C:\Program Files (x86)\Google\Chrome\chromedriver.exe'
     driver = webdriver.Chrome(executable_path=driver_path)
     driver.get('https://tarkov-market.com/ru/barter')
     while True:
@@ -403,7 +435,7 @@ def make_barters_table():
 
 
 if __name__ == '__main__':
-    sort_barters()
+    app()
 
 # TODO: Попробовать новенькое:
 #   синхронный код
@@ -416,3 +448,4 @@ if __name__ == '__main__':
 # TODO: Попробовать исправить ошибку с двойными крафтами
 # TODO: научиться избавляться от двойных пробелов в названиях придмета (seek_price)
 # TODO: Добавить к Профиту столбец профита от продажи торговцу
+# TODO: Сделать update_prices одной функцией с sort
