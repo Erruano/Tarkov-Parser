@@ -1,5 +1,6 @@
 import re
 import sys
+import os
 from PyQt5 import QtWidgets
 import openpyxl
 import win32com.client
@@ -16,12 +17,14 @@ class ExampleApp(QtWidgets.QMainWindow, gui.Ui_MainWindow):
         self.setupUi(self)
         self.operations()
 
-
     def operations(self):
-        self.btn_refresh_price.clicked.connect(update_prices())
-        self.btn_make_crafts.clicked.connect(update_crafts())
-        self.btn_make_barters.clicked.connect(update_barters())
-
+        self.btn_refresh_price.clicked.connect(update_prices)
+        self.btn_sort_crafts.clicked.connect(sort_crafts)
+        self.btn_sort_barters.clicked.connect(sort_barters)
+        self.btn_make_table.clicked.connect(make_table)
+        self.btn_make_crafts.clicked.connect(update_crafts)
+        self.btn_make_barters.clicked.connect(update_barters)
+        self.btn_open_table.clicked.connect(open_table)
 
 
 def app():
@@ -434,6 +437,11 @@ def make_barters_table():
     wb.save('Database.xlsx')
 
 
+def open_table():
+    path = r'C:\Users\Karapuzo\PycharmProjects\Tarkov-Parser\Database.xlsx'
+    os.system("start "+path)
+
+
 if __name__ == '__main__':
     app()
 
@@ -446,6 +454,4 @@ if __name__ == '__main__':
 #   графики изменения цены
 # TODO: Предотвращать возможные ошибки
 # TODO: Попробовать исправить ошибку с двойными крафтами
-# TODO: научиться избавляться от двойных пробелов в названиях придмета (seek_price)
 # TODO: Добавить к Профиту столбец профита от продажи торговцу
-# TODO: Сделать update_prices одной функцией с sort
