@@ -3,7 +3,7 @@ import sys
 import os
 from PyQt5 import QtWidgets
 import openpyxl
-import win32com.client
+from win32com.client import DispatchEx
 from openpyxl.utils.dataframe import dataframe_to_rows
 import pandas as pd
 from selenium import webdriver
@@ -45,8 +45,8 @@ def find_digit(a):
 
 
 def update_table():
-    xlapp = win32com.client.DispatchEx("Excel.Application")
-    wb = xlapp.workbooks.Open(r'C:\Users\Karapuzo\PycharmProjects\Tarkov-Parser\Database.xlsx')
+    xlapp = DispatchEx("Excel.Application")
+    wb = xlapp.Workbooks.Open(r'C:\Users\Karapuzo\PycharmProjects\Tarkov-Parser\Database.xlsx')
     wb.RefreshAll()
     wb.Save()
     xlapp.Quit()
@@ -78,6 +78,18 @@ def seek_vendor_price(request):
             return ws.cell(row=i, column=3).coordinate
 
 
+def sort_items():
+    update_table()
+    try:
+        df = pd.read_excel('Database.xlsx', sheet_name='Prices', engine='openpyxl')
+    except ValueError:
+        print("Лист 'Prices' не найден, запущена функция 'update_prices'")
+        update_prices()
+        df = pd.read_excel("Database.xlsx", sheet_name="Prices", engine="openpyxl")
+    sorted_df = df.sort_values(by="Instant Profit", ascending=False)
+    wb = openpyxl.load_workbook("Database.xlsx")
+
+
 def sort_crafts():
     update_table()
     # Сортирует
@@ -89,20 +101,23 @@ def sort_crafts():
         df = pd.read_excel('Database.xlsx', sheet_name='Crafts_raw', engine='openpyxl')
     print('Напишите по какому столбцу будем сортировать таблицу бартеров (Profit или Profit/H)')
     by = str(input())
-    sorted_df = df.sort_values(by='Profit/H', ascending=False)
+    sorted_df = df.sort_values(by=by, ascending=False)
     # Сохраняет сортировку + очищает страницу
     wb = openpyxl.load_workbook('Database.xlsx')
     try:
-        ws = wb['Crafts_nude']
+        ws = wb["Crafts_nude"]
+        for i in range(1, ws.max_row + 1):
+            for y in range(1, ws.max_column + 1):
+                ws.cell(row=i, column=y).value = None
+        wb.save("Database.xlsx")
+        wb = openpyxl.load_workbook("Database.xlsx")
+        ws = wb["Crafts_nude"]
     except KeyError:
-        ws = wb.create_sheet('Crafts_nude')
-    for i in range(1, ws.max_row + 1):
-        for y in range(1, ws.max_column + 1):
-            ws.cell(row=i, column=y).value = None
+        ws = wb.create_sheet("Crafts_nude")
     for i in dataframe_to_rows(sorted_df, index=False, header=True):
         ws.append(i)
     wb.save('Database.xlsx')
-    make_table()
+    print("Крафты отсортированы")
 
 
 def sort_barters():
@@ -121,16 +136,18 @@ def sort_barters():
     wb = openpyxl.load_workbook('Database.xlsx')
     try:
         ws = wb['Barters_nude']
+        for i in range(1, ws.max_row + 1):
+            for y in range(1, ws.max_column + 1):
+                ws.cell(row=i, column=y).value = None
+        wb.save("Database.xlsx")
+        wb = openpyxl.load_workbook("Database.xlsx")
+        ws = wb["Barters_nude"]
     except KeyError:
         ws = wb.create_sheet('Barters_nude')
-    for i in range(1, ws.max_row + 1):
-        for y in range(1, ws.max_column + 1):
-            ws.cell(row=i, column=y).value = None
     for i in dataframe_to_rows(sorted_df, index=False, header=True):
-        print(i)
         ws.append(i)
     wb.save('Database.xlsx')
-    make_barters_table()
+    print("Сортировка бартеров завершена")
 
 
 def update_prices():
@@ -166,9 +183,9 @@ def update_prices():
     except KeyError:
         ws = wb.active
         ws.title = 'Prices'
-    ws.cell(row=1, column=1, value='Name')
-    ws.cell(row=1, column=2, value='Price')
-    ws.cell(row=1, column=3, value='Vendor price')
+    columns = ["Name", "Price", "Vendor Price", "Instant Profit"]
+    for i in range(len(columns)):
+        ws.cell(row=1, column=i + 1, value=columns[i])
     ws.column_dimensions['A'].width = 36
     ws.column_dimensions['B'].width = 8
     ws.column_dimensions['C'].width = 10
@@ -278,8 +295,6 @@ def update_crafts():
         row += 1
     wb.save('Database.xlsx')
     driver.quit()
-    sort_crafts()
-    sort_barters()
 
 
 def update_barters():
@@ -443,7 +458,8 @@ def open_table():
 
 
 if __name__ == '__main__':
-    app()
+    sort_crafts()
+
 
 # TODO: Попробовать новенькое:
 #   синхронный код
@@ -455,3 +471,4 @@ if __name__ == '__main__':
 # TODO: Предотвращать возможные ошибки
 # TODO: Попробовать исправить ошибку с двойными крафтами
 # TODO: Добавить к Профиту столбец профита от продажи торговцу
+# TODO: Использовать pandas между парсингом и созданием таблицы
