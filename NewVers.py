@@ -8,7 +8,8 @@ from openpyxl.utils.dataframe import dataframe_to_rows
 import pandas as pd
 from selenium import webdriver
 from selenium.webdriver.common.by import By
-import gui
+import GUIs.MainWindow.gui as gui
+import GUIs.process.processing as processing_window
 
 
 class ExampleApp(QtWidgets.QMainWindow, gui.Ui_MainWindow):
@@ -25,6 +26,12 @@ class ExampleApp(QtWidgets.QMainWindow, gui.Ui_MainWindow):
         self.btn_make_crafts.clicked.connect(update_crafts)
         self.btn_make_barters.clicked.connect(update_barters)
         self.btn_open_table.clicked.connect(open_table)
+
+
+class ProcessWindow(QtWidgets.QMainWindow, processing_window.Ui_MainWindow):
+    def __init__(self):
+        super(ProcessWindow, self).__init__()
+        self.setupUi(self)
 
 
 def app():
