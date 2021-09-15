@@ -60,7 +60,7 @@ def find_digit(a):
 
 def update_table():
     xlapp = DispatchEx("Excel.Application")
-    wb = xlapp.Workbooks.Open(os.getcwd() +'\Database.xlsx')
+    wb = xlapp.Workbooks.Open(os.getcwd() + '\Database.xlsx')
     wb.RefreshAll()
     wb.Save()
     xlapp.Quit()
@@ -261,10 +261,9 @@ def update_crafts():
         result_amount = driver.find_element(By.XPATH, f'//div[@class="card recipe"][{i}]//'
                                                       f'div[@class="d-flex only mb-15"][{len(names)}]//'
                                                       f'div[@class="image"]/div').get_attribute('textContent')
-        result_price_coordinate = seek_price(driver.find_element(By.XPATH, f'//div[@class="card recipe"][{i}]//'
-                                                                           f'div[@class="d-flex only mb-15"]'
-                                                                           f'[{len(names)}]//span')
-                                             .get_attribute('textContent'))
+        result_price_coordinate = seek_price(driver.find_element(By.XPATH, f'//div[@class="card recipe"][{i}]//div['
+                                                                           f'@class="d-flex only mb-15"][{len(names)}'
+                                                                           f']//span').get_attribute('textContent'))
         ws.cell(row=row, column=column, value=modules)
         column += 1
         for y in range(1, 6):
@@ -288,11 +287,11 @@ def update_crafts():
         column += 1
         ws.cell(row=row, column=column, value=f'=Prices!{result_price_coordinate}')
         column += 1
-        ws.cell(row=row, column=column, value=f'=U{str(row)}*T{str(row)}')
+        ws.cell(row=row, column=column, value=f'=U{row}*T{row}')
         column += 1
-        ws.cell(row=row, column=column, value=f'=V{str(row)}-Q{str(row)}')
+        ws.cell(row=row, column=column, value=f'=V{row}-Q{row}')
         column += 1
-        ws.cell(row=row, column=column, value=f'=W{str(row)}/R{str(row)}*60')
+        ws.cell(row=row, column=column, value=f'=W{row}/R{row}*60')
         row += 1
     wb.save('Database.xlsx')
     driver.quit()
@@ -325,26 +324,31 @@ def update_barters():
         ingredients = []
         in_amount = []
         prices_coordinates = []
-        trader = driver.find_element(By.XPATH, f'//div[@class="card recipe"][{i}]//div[@class="big"]').get_attribute('textContent')
+        trader = driver.find_element(By.XPATH, f'//div[@class="card recipe"][{i}]//div[@class="big"]').get_attribute(
+            'textContent')
         names = driver.find_elements(By.XPATH, f'//div[@class="card recipe"][{i}]//span[@class="big"]')
         for y in range(1, len(names)):
-            ingredients.append(driver.find_element(By.XPATH, '//div[@class="card recipe"][' + str(
-                i) + ']//div[@class="d-flex only mb-15"][' + str(y) + ']//span').get_attribute('textContent'))
-            in_amount.append(driver.find_element(By.XPATH, '//div[@class="card recipe"][' + str(
-                i) + ']//div[@class="d-flex only mb-15"][' + str(y) + ']//div[@class="image"]/div').get_attribute(
+            ingredients.append(driver.find_element(By.XPATH,
+                                                   f'//div[@class="card recipe"][{i}]//div[@class="d-flex only mb-15"][{y}]//span').get_attribute(
                 'textContent'))
-            prices_coordinates.append(seek_price(driver.find_element(By.XPATH, '//div[@class="card recipe"][' + str(
-                i) + ']//div[@class="d-flex only mb-15"][' + str(y) + ']//span').get_attribute('textContent')))
+            in_amount.append(driver.find_element(By.XPATH,
+                                                 f'//div[@class="card recipe"][{i}]//div[@class="d-flex only mb-15"]{y}]//div[@class="image"]/div').get_attribute(
+                'textContent'))
+            prices_coordinates.append(seek_price(driver.find_element(By.XPATH,
+                                                                     f'//div[@class="card recipe"][{i}]//div[@class="d-flex only mb-15"][{y}]//span').get_attribute(
+                'textContent')))
         result = driver.find_element(By.XPATH, '//div[@class="card recipe"][' + str(
             i) + ']//div[@class="d-flex only mb-15"][' + str(len(names)) + ']//span').get_attribute('textContent')
-        result_amount = driver.find_element(By.XPATH, '//div[@class="card recipe"][' + str(
-            i) + ']//div[@class="d-flex only mb-15"][' + str(len(names)) + ']//div[@class="image"]/div').get_attribute(
+        result_amount = driver.find_element(By.XPATH,
+                                            f'//div[@class="card recipe"][{i}]//div[@class="d-flex only mb-15"][{len(names)}]//div[@class="image"]/div').get_attribute(
             'textContent')
-        result_price_coordinate = seek_price(driver.find_element(By.XPATH, '//div[@class="card recipe"][' + str(
-            i) + ']//div[@class="d-flex only mb-15"][' + str(len(names)) + ']//span').get_attribute('textContent'))
+        result_price_coordinate = seek_price(driver.find_element(By.XPATH,
+                                                                 f'//div[@class="card recipe"][{i}]//div[@class="d-flex only mb-15"][{len(names)}]//span').get_attribute(
+            'textContent'))
         result_vendor_price_coordinate = seek_vendor_price(
-            driver.find_element(By.XPATH, '//div[@class="card recipe"][' + str(
-                i) + ']//div[@class="d-flex only mb-15"][' + str(len(names)) + ']//span').get_attribute('textContent'))
+            driver.find_element(By.XPATH,
+                                f'//div[@class="card recipe"][{i}]//div[@class="d-flex only mb-15"][{len(names)}]//span').get_attribute(
+                'textContent'))
         column = 1
         ws.cell(row=row, column=column, value=trader)
         column += 1
@@ -366,15 +370,15 @@ def update_barters():
         column += 1
         ws.cell(row=row, column=column, value=f'=Prices!{result_price_coordinate}')
         column += 1
-        ws.cell(row=row, column=column, value='=Prices!' + str(result_vendor_price_coordinate))
+        ws.cell(row=row, column=column, value=f'=Prices!{result_vendor_price_coordinate}')
         column += 1
-        ws.cell(row=row, column=column, value='=S' + str(row) + '*T' + str(row))
+        ws.cell(row=row, column=column, value=f'=S{row}*T{row}')
         column += 1
-        ws.cell(row=row, column=column, value='=S' + str(row) + '*U' + str(row))
+        ws.cell(row=row, column=column, value=f'=S{row}*U{row}')
         column += 1
-        ws.cell(row=row, column=column, value='=V' + str(row) + '-Q' + str(row))
+        ws.cell(row=row, column=column, value=f'=V{row}-Q{row}')
         column += 1
-        ws.cell(row=row, column=column, value='=W' + str(row) + '-Q' + str(row))
+        ws.cell(row=row, column=column, value=f'=W{row}-Q{row}')
         row += 1
     wb.save('Database.xlsx')
     driver.quit()
@@ -392,27 +396,27 @@ def make_table():
             ws.cell(1, i, value=columns[i - 1])
     row = 2
     for i in range(124):
-        ws.cell(row=row, column=1, value='=Crafts_nude!A' + str(i + 2))
+        ws.cell(row=row, column=1, value=f'=Crafts_nude!A{i + 2}')
         ws.merge_cells(start_row=row, start_column=1, end_row=row + 4, end_column=1)
         for y in range(0, 5):
-            ws.cell(row=row + y, column=2, value='=Crafts_nude!' + str(chr(ord('B') + (y * 3))) + str(i + 2))
-            ws.cell(row=row + y, column=3, value='=Crafts_nude!' + str(chr(ord('C') + (y * 3))) + str(i + 2))
-            ws.cell(row=row + y, column=4, value='=Crafts_nude!' + str(chr(ord('D') + (y * 3))) + str(i + 2))
-        ws.cell(row=row, column=5, value='=Crafts_nude!Q' + str(i + 2))
+            ws.cell(row=row + y, column=2, value=f'=Crafts_nude!{str(chr(ord("B") + (y * 3))) + str(i + 2)}')
+            ws.cell(row=row + y, column=3, value=f'=Crafts_nude!{str(chr(ord("C") + (y * 3))) + str(i + 2)}')
+            ws.cell(row=row + y, column=4, value=f'=Crafts_nude!{str(chr(ord("D") + (y * 3))) + str(i + 2)}')
+        ws.cell(row=row, column=5, value=f'=Crafts_nude!Q{i + 2}')
         ws.merge_cells(start_row=row, start_column=5, end_row=row + 4, end_column=5)
-        ws.cell(row=row, column=6, value='=Crafts_nude!R' + str(i + 2))
+        ws.cell(row=row, column=6, value=f'=Crafts_nude!R{i + 2}')
         ws.merge_cells(start_row=row, start_column=6, end_row=row + 4, end_column=6)
-        ws.cell(row=row, column=7, value='=Crafts_nude!S' + str(i + 2))
+        ws.cell(row=row, column=7, value=f'=Crafts_nude!S{i + 2}')
         ws.merge_cells(start_row=row, start_column=7, end_row=row + 4, end_column=7)
-        ws.cell(row=row, column=8, value='=Crafts_nude!T' + str(i + 2))
+        ws.cell(row=row, column=8, value=f'=Crafts_nude!T{i + 2}')
         ws.merge_cells(start_row=row, start_column=8, end_row=row + 4, end_column=8)
-        ws.cell(row=row, column=9, value='=Crafts_nude!U' + str(i + 2))
+        ws.cell(row=row, column=9, value=f'=Crafts_nude!U{i + 2}')
         ws.merge_cells(start_row=row, start_column=9, end_row=row + 4, end_column=9)
-        ws.cell(row=row, column=10, value='=I' + str(row) + '*H' + str(row))
+        ws.cell(row=row, column=10, value=f'=I{row}*H{row}')
         ws.merge_cells(start_row=row, start_column=10, end_row=row + 4, end_column=10)
-        ws.cell(row=row, column=11, value='=J' + str(row) + '-E' + str(row))
+        ws.cell(row=row, column=11, value=f'=J{row}-E{row}')
         ws.merge_cells(start_row=row, start_column=11, end_row=row + 4, end_column=11)
-        ws.cell(row=row, column=12, value='=K' + str(row) + '/F' + str(row) + '*60')
+        ws.cell(row=row, column=12, value=f'=K{row}/F{row}*60')
         ws.merge_cells(start_row=row, start_column=12, end_row=row + 4, end_column=12)
         row += 5
     wb.save('Database.xlsx')
