@@ -41,6 +41,13 @@ def app():
     app.exec()
 
 
+def process_window():
+    app = QtWidgets.QApplication(sys.argv)
+    window = ProcessWindow
+    window.show()
+    app.exec()
+
+
 def find_digit(a):
     num = ''
     for i in list(a):
@@ -53,7 +60,7 @@ def find_digit(a):
 
 def update_table():
     xlapp = DispatchEx("Excel.Application")
-    wb = xlapp.Workbooks.Open(r'C:\Users\Karapuzo\PycharmProjects\Tarkov-Parser\Database.xlsx')
+    wb = xlapp.Workbooks.Open(os.getcwd() +'\Database.xlsx')
     wb.RefreshAll()
     wb.Save()
     xlapp.Quit()
@@ -172,15 +179,16 @@ def update_prices():
     names = driver.find_elements(By.XPATH, '//span[@class="name"]')
     pric = driver.find_elements(By.XPATH, '//span[@class="price-main"]')
     vendor = driver.find_elements(By.XPATH, '//div[@class="alt"]')
-    titles = []
-    prices = []
-    vendor_prices = []
-    for name in names:
-        titles.append(name.text)
-    for price in pric:
-        prices.append(find_digit(price.text))
-    for price in vendor:
-        vendor_prices.append(find_digit(price.text))
+
+    df = pd.DataFrame()
+    for i in range(len(names)):
+        item = {'Name': names[i].text,
+                'Price': pric[i].text,
+                'Vendor Price': vendor[i].text,
+                'Instant Profit': f'=C{str(i + 2)}-B{str(i + 2)}'}
+        df = df.append(item, ignore_index=True)
+    driver.quit()
+
     try:
         wb = openpyxl.load_workbook('Database.xlsx')
     except FileNotFoundError:
@@ -190,21 +198,9 @@ def update_prices():
     except KeyError:
         ws = wb.active
         ws.title = 'Prices'
-    columns = ["Name", "Price", "Vendor Price", "Instant Profit"]
-    for i in range(len(columns)):
-        ws.cell(row=1, column=i + 1, value=columns[i])
-    ws.column_dimensions['A'].width = 36
-    ws.column_dimensions['B'].width = 8
-    ws.column_dimensions['C'].width = 10
-    row = 2
-    for i in range(len(names)):
-        ws.cell(row, 1).value = titles[i]
-        ws.cell(row, 2).value = int(prices[i])
-        ws.cell(row, 3).value = int(vendor_prices[i])
-        ws.cell(row, 4).value = '=C' + str(row) + '-B' + str(row)
-        row += 1
+    for i in dataframe_to_rows(df, index=False, header=True):
+        ws.append(i)
     wb.save('Database.xlsx')
-    driver.quit()
 
 
 def update_crafts():
@@ -224,34 +220,33 @@ def update_crafts():
         ws = wb['Crafts_raw']
     except KeyError:
         ws = wb.create_sheet('Crafts_raw')
-        columns = ['Module', 'Ingredient', 'Amount', 'Price', 'Ingredient', 'Amount', 'Price', 'Ingredient', 'Amount',
-                   'Price', 'Ingredient', 'Amount', 'Price', 'Ingredient', 'Amount', 'Price', 'Sum', 'Time(min)',
-                   'Name', 'Amount', 'Price', 'Sum', 'Profit', 'Profit/H']
-        for i in range(1, len(columns) + 1):
-            ws.cell(1, i, value=columns[i - 1])
+        column_names = ['Module', 'Ingredient', 'Amount', 'Price', 'Ingredient', 'Amount', 'Price', 'Ingredient',
+                        'Amount', 'Price', 'Ingredient', 'Amount', 'Price', 'Ingredient', 'Amount', 'Price', 'Sum',
+                        'Time(min)', 'Name', 'Amount', 'Price', 'Sum', 'Profit', 'Profit/H']
+        for i in range(1, len(column_names) + 1):
+            ws.cell(1, i, value=column_names[i - 1])
     row = 2
     for i in range(1, len(cards) + 1):
         column = 1
         ingredients = []
         in_amount = []
         pricescord = []
-        names = driver.find_elements(By.XPATH, '//div[@class="card recipe"][' + str(i) + ']//span[@class="big"]')
+        names = driver.find_elements(By.XPATH, f'//div[@class="card recipe"][{i}]//span[@class="big"]')
         for y in range(1, len(names)):
-            ingredients.append(driver.find_element(By.XPATH, '//div[@class="card recipe"][' + str(i) +
-                                                   ']//div[@class="d-flex only mb-15"][' + str(y) +
-                                                   ']//span').get_attribute('textContent'))
-            in_amount.append(driver.find_element(By.XPATH, '//div[@class="card recipe"][' + str(i) +
-                                                 ']//div[@class="d-flex only mb-15"][' + str(y) +
-                                                 ']//div[@class="image"]/div').get_attribute('textContent'))
-            pricescord.append(seek_price(driver.find_element(By.XPATH, '//div[@class="card recipe"][' + str(i) +
-                                                             ']//div[@class="d-flex only mb-15"][' + str(y) +
-                                                             ']//span').get_attribute('textContent')))
-        modules = driver.find_element(By.XPATH, "//div[@class='row recipe'][" + str(i) + "]//div[@class='big']").text
-        result = driver.find_element(By.XPATH, '//div[@class="card recipe"][' + str(i) +
-                                     ']//div[@class="d-flex only mb-15"][' + str(len(names)) +
-                                     ']//span').get_attribute('textContent')
-        time = list(driver.find_element(By.XPATH, '//div[@class="card recipe"][' + str(i) +
-                                        ']//div[@class="text-center big"]').get_attribute('textContent'))
+            ingredients.append(driver.find_element(By.XPATH, f'//div[@class="card recipe"][{i}]//'
+                                                             f'div[@class="d-flex only mb-15"][{y}]//span')
+                               .get_attribute('textContent'))
+            in_amount.append(driver.find_element(By.XPATH, f'//div[@class="card recipe"][{i}]//'
+                                                           f'div[@class="d-flex only mb-15"][{y}]//'
+                                                           f'div[@class="image"]/div').get_attribute('textContent'))
+            pricescord.append(seek_price(driver.find_element(By.XPATH, f'//div[@class="card recipe"][{i}]//'
+                                                                       f'div[@class="d-flex only mb-15"][{y}]//'
+                                                                       f'span').get_attribute('textContent')))
+        modules = driver.find_element(By.XPATH, f"//div[@class='row recipe'][{i}]//div[@class='big']").text
+        result = driver.find_element(By.XPATH, f'//div[@class="card recipe"][{i}]//div[@class="d-flex only mb-15"]'
+                                               f'[{len(names)}]//span').get_attribute('textContent')
+        time = list(driver.find_element(By.XPATH, f'//div[@class="card recipe"][{i}]//'
+                                                  f'div[@class="text-center big"]').get_attribute('textContent'))
         minutes = 0
         tim = ''
         for t in range(len(time)):
@@ -263,13 +258,13 @@ def update_crafts():
             elif time[t] == 'м':
                 minutes += int(tim)
                 break
-        result_amount = driver.find_element(By.XPATH, '//div[@class="card recipe"][' + str(i) +
-                                            ']//div[@class="d-flex only mb-15"][' + str(len(names)) +
-                                            ']//div[@class="image"]/div').get_attribute('textContent')
-        result_price_coordinate = seek_price(driver.find_element(By.XPATH, '//div[@class="card recipe"][' + str(i) +
-                                                                 ']//div[@class="d-flex only mb-15"][' + str(
-            len(names)) +
-                                                                 ']//span').get_attribute('textContent'))
+        result_amount = driver.find_element(By.XPATH, f'//div[@class="card recipe"][{i}]//'
+                                                      f'div[@class="d-flex only mb-15"][{len(names)}]//'
+                                                      f'div[@class="image"]/div').get_attribute('textContent')
+        result_price_coordinate = seek_price(driver.find_element(By.XPATH, f'//div[@class="card recipe"][{i}]//'
+                                                                           f'div[@class="d-flex only mb-15"]'
+                                                                           f'[{len(names)}]//span')
+                                             .get_attribute('textContent'))
         ws.cell(row=row, column=column, value=modules)
         column += 1
         for y in range(1, 6):
@@ -278,13 +273,12 @@ def update_crafts():
                 column += 1
                 ws.cell(row=row, column=column, value=find_digit(in_amount[y - 1]))
                 column += 1
-                ws.cell(row=row, column=column, value='=Prices!' + pricescord[y - 1])
+                ws.cell(row=row, column=column, value=f'=Prices!{pricescord[y - 1]}')
                 column += 1
             except IndexError:
                 column += 3
         ws.cell(row=row, column=column,
-                value=('=D' + str(row) + '*C' + str(row) + '+G' + str(row) + '*F' + str(row) + '+J' + str(row) +
-                       '*I' + str(row) + '+M' + str(row) + '*L' + str(row) + '+P' + str(row) + '*O' + str(row)))
+                value=f'=D{row}*C{row}+G{row}*F{row}+J{row}*I{row}+M{row}*L{row}+P{row}*O{row}')
         column += 1
         ws.cell(row=row, column=column, value=minutes)
         column += 1
@@ -292,13 +286,13 @@ def update_crafts():
         column += 1
         ws.cell(row=row, column=column, value=find_digit(result_amount))
         column += 1
-        ws.cell(row=row, column=column, value='=Prices!' + str(result_price_coordinate))
+        ws.cell(row=row, column=column, value=f'=Prices!{result_price_coordinate}')
         column += 1
-        ws.cell(row=row, column=column, value='=U' + str(row) + '*T' + str(row))
+        ws.cell(row=row, column=column, value=f'=U{str(row)}*T{str(row)}')
         column += 1
-        ws.cell(row=row, column=column, value='=V' + str(row) + '-Q' + str(row))
+        ws.cell(row=row, column=column, value=f'=V{str(row)}-Q{str(row)}')
         column += 1
-        ws.cell(row=row, column=column, value='=W' + str(row) + '/R' + str(row) + '*60')
+        ws.cell(row=row, column=column, value=f'=W{str(row)}/R{str(row)}*60')
         row += 1
     wb.save('Database.xlsx')
     driver.quit()
@@ -331,9 +325,8 @@ def update_barters():
         ingredients = []
         in_amount = []
         prices_coordinates = []
-        trader = driver.find_element(By.XPATH, '//div[@class="card recipe"][' + str(i) +
-                                     ']//div[@class="big"]').get_attribute('textContent')
-        names = driver.find_elements(By.XPATH, '//div[@class="card recipe"][' + str(i) + ']//span[@class="big"]')
+        trader = driver.find_element(By.XPATH, f'//div[@class="card recipe"][{i}]//div[@class="big"]').get_attribute('textContent')
+        names = driver.find_elements(By.XPATH, f'//div[@class="card recipe"][{i}]//span[@class="big"]')
         for y in range(1, len(names)):
             ingredients.append(driver.find_element(By.XPATH, '//div[@class="card recipe"][' + str(
                 i) + ']//div[@class="d-flex only mb-15"][' + str(y) + ']//span').get_attribute('textContent'))
@@ -349,8 +342,9 @@ def update_barters():
             'textContent')
         result_price_coordinate = seek_price(driver.find_element(By.XPATH, '//div[@class="card recipe"][' + str(
             i) + ']//div[@class="d-flex only mb-15"][' + str(len(names)) + ']//span').get_attribute('textContent'))
-        result_vendor_price_coordinate = seek_vendor_price(driver.find_element(By.XPATH, '//div[@class="card recipe"][' + str(
-            i) + ']//div[@class="d-flex only mb-15"][' + str(len(names)) + ']//span').get_attribute('textContent'))
+        result_vendor_price_coordinate = seek_vendor_price(
+            driver.find_element(By.XPATH, '//div[@class="card recipe"][' + str(
+                i) + ']//div[@class="d-flex only mb-15"][' + str(len(names)) + ']//span').get_attribute('textContent'))
         column = 1
         ws.cell(row=row, column=column, value=trader)
         column += 1
@@ -364,15 +358,13 @@ def update_barters():
                 column += 1
             except IndexError:
                 column += 3
-        ws.cell(row=row, column=column, value=(
-                '=D' + str(row) + '*C' + str(row) + '+G' + str(row) + '*F' + str(row) + '+J' + str(row) +
-                '*I' + str(row) + '+M' + str(row) + '*L' + str(row) + '+P' + str(row) + '*O' + str(row)))
+        ws.cell(row=row, column=column, value=f'=D{row}*C{row}+G{row}*F{row}+J{row}*I{row}+M{row}*L{row}+P{row}*O{row}')
         column += 1
         ws.cell(row=row, column=column, value=result)
         column += 1
         ws.cell(row=row, column=column, value=find_digit(result_amount))
         column += 1
-        ws.cell(row=row, column=column, value='=Prices!' + str(result_price_coordinate))
+        ws.cell(row=row, column=column, value=f'=Prices!{result_price_coordinate}')
         column += 1
         ws.cell(row=row, column=column, value='=Prices!' + str(result_vendor_price_coordinate))
         column += 1
@@ -382,7 +374,7 @@ def update_barters():
         column += 1
         ws.cell(row=row, column=column, value='=V' + str(row) + '-Q' + str(row))
         column += 1
-        ws.cell(row=row, column=column, value='=X' + str(row) + '-Q' + str(row))
+        ws.cell(row=row, column=column, value='=W' + str(row) + '-Q' + str(row))
         row += 1
     wb.save('Database.xlsx')
     driver.quit()
@@ -437,36 +429,37 @@ def make_barters_table():
             ws.cell(1, i, value=columns[i - 1])
     row = 2
     for i in range(124):
-        ws.cell(row=row, column=1, value='=Barters_nude!A' + str(i + 2))
+        ws.cell(row=row, column=1, value=f'=Barters_nude!A{str(i + 2)}')
         ws.merge_cells(start_row=row, start_column=1, end_row=row + 4, end_column=1)
         for y in range(0, 5):
-            ws.cell(row=row + y, column=2, value='=Barters_nude!' + str(chr(ord('B') + (y * 3))) + str(i + 2))
-            ws.cell(row=row + y, column=3, value='=Barters_nude!' + str(chr(ord('C') + (y * 3))) + str(i + 2))
-            ws.cell(row=row + y, column=4, value='=Barters_nude!' + str(chr(ord('D') + (y * 3))) + str(i + 2))
-        ws.cell(row=row, column=5, value='=Barters_nude!Q' + str(i + 2))
+            ws.cell(row=row + y, column=2, value=f'=Barters_nude!{chr(ord("B") + (y * 3)) + str(i + 2)}')
+            ws.cell(row=row + y, column=3, value=f'=Barters_nude!{chr(ord("C") + (y * 3)) + str(i + 2)}')
+            ws.cell(row=row + y, column=4, value=f'=Barters_nude!{chr(ord("D") + (y * 3)) + str(i + 2)}')
+        ws.cell(row=row, column=5, value=f'=Barters_nude!Qstr{(i + 2)}')
         ws.merge_cells(start_row=row, start_column=5, end_row=row + 4, end_column=5)
-        ws.cell(row=row, column=6, value='=Barters_nude!R' + str(i + 2))
+        ws.cell(row=row, column=6, value=f'=Barters_nude!R{i + 2}')
         ws.merge_cells(start_row=row, start_column=6, end_row=row + 4, end_column=6)
-        ws.cell(row=row, column=7, value='=Barters_nude!S' + str(i + 2))
+        ws.cell(row=row, column=7, value=f'=Barters_nude!S{i + 2}')
         ws.merge_cells(start_row=row, start_column=7, end_row=row + 4, end_column=7)
-        ws.cell(row=row, column=8, value='=Barters_nude!T' + str(i + 2))
+        ws.cell(row=row, column=8, value=f'=Barters_nude!T{i + 2}')
         ws.merge_cells(start_row=row, start_column=8, end_row=row + 4, end_column=8)
-        ws.cell(row=row, column=9, value='=G' + str(row) + '*H' + str(row))
+        ws.cell(row=row, column=9, value=f'=G{row}*H{row}')
         ws.merge_cells(start_row=row, start_column=9, end_row=row + 4, end_column=9)
-        ws.cell(row=row, column=10, value='=I' + str(row) + '-E' + str(row))
+        ws.cell(row=row, column=10, value=f'=I{row}-E{row}')
         ws.merge_cells(start_row=row, start_column=10, end_row=row + 4, end_column=10)
         row += 5
     wb.save('Database.xlsx')
 
 
 def open_table():
-    path = r'C:\Users\Karapuzo\PycharmProjects\Tarkov-Parser\Database.xlsx'
-    os.system("start "+path)
+    path = 'Database.xlsx'
+    os.system("start " + path)
 
 
 if __name__ == '__main__':
-    sort_crafts()
+    os.chdir('C:\Eruano\Programming\Tarkov Parser')
 
+    update_crafts()
 
 # TODO: Попробовать новенькое:
 #   синхронный код
