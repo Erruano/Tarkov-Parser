@@ -462,7 +462,6 @@ def open_table():
 
 if __name__ == '__main__':
     os.chdir('C:\Eruano\Programming\Tarkov Parser')
-
     app()
 
 # TODO: Попробовать новенькое:
