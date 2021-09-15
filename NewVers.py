@@ -35,17 +35,17 @@ class ProcessWindow(QtWidgets.QMainWindow, processing_window.Ui_MainWindow):
 
 
 def app():
-    app = QtWidgets.QApplication(sys.argv)
+    app_ = QtWidgets.QApplication(sys.argv)
     window = ExampleApp()
     window.show()
-    app.exec()
+    app_.exec()
 
 
 def process_window():
-    app = QtWidgets.QApplication(sys.argv)
+    app_ = QtWidgets.QApplication(sys.argv)
     window = ProcessWindow
     window.show()
-    app.exec()
+    app_.exec()
 
 
 def find_digit(a):
@@ -463,7 +463,7 @@ def open_table():
 if __name__ == '__main__':
     os.chdir('C:\Eruano\Programming\Tarkov Parser')
 
-    update_crafts()
+    app()
 
 # TODO: Попробовать новенькое:
 #   синхронный код
