@@ -22,7 +22,7 @@ class ExampleApp(QtWidgets.QMainWindow, gui.Ui_MainWindow):
         self.btn_refresh_price.clicked.connect(update_prices)
         self.btn_sort_crafts.clicked.connect(sort_crafts)
         self.btn_sort_barters.clicked.connect(sort_barters)
-        self.btn_make_table.clicked.connect(make_table)
+        self.btn_make_table.clicked.connect(make_crafts_table)
         self.btn_make_crafts.clicked.connect(update_crafts)
         self.btn_make_barters.clicked.connect(update_barters)
         self.btn_open_table.clicked.connect(open_table)
@@ -35,6 +35,9 @@ class ProcessWindow(QtWidgets.QMainWindow, processing_window.Ui_MainWindow):
 
 
 def app():
+    '''
+    Запускает GUI
+    '''
     app_ = QtWidgets.QApplication(sys.argv)
     window = ExampleApp()
     window.show()
@@ -49,6 +52,10 @@ def process_window():
 
 
 def find_digit(a):
+    '''
+    :param a: Строка, содержащая число
+    :return: Первое число из строки (str)
+    '''
     num = ''
     for i in list(a):
         if i.isdigit():
@@ -59,6 +66,9 @@ def find_digit(a):
 
 
 def update_table():
+    '''
+    Обновляет данные в ячейках
+    '''
     xlapp = DispatchEx("Excel.Application")
     wb = xlapp.Workbooks.Open(os.getcwd() + '\Database.xlsx')
     wb.RefreshAll()
@@ -67,6 +77,10 @@ def update_table():
 
 
 def isint(a):
+    '''
+    :param a: строка
+    :return: Является ли значение числом (bool)
+    '''
     try:
         int(a)
         return True
@@ -74,7 +88,25 @@ def isint(a):
         return False
 
 
+def clean_sheet(wb_name, sheet_name):
+    '''
+    :param wb_name: Имя файла
+    :param sheet_name: Имя таблицы
+    :return: Очищает всесь лист, не удаляя его
+    '''
+    wb = openpyxl.load_workbook(wb_name)
+    ws = wb[sheet_name]
+    for i in range(1, ws.max_row + 1):
+        for y in range(1, ws.max_column + 1):
+            ws.cell(row=i, column=y).value = None
+    wb.save(wb_name)
+
+
 def seek_price(request):
+    """
+    :param request: Название предмета
+    :return: Возвращает цену предмета из Database.xlsx листа Prices
+    """
     wb = openpyxl.load_workbook('Database.xlsx')
     ws = wb['Prices']
     name = re.sub(r'\s+', ' ', request)
@@ -84,6 +116,10 @@ def seek_price(request):
 
 
 def seek_vendor_price(request):
+    '''
+    :param request: Название предмета
+    :return: Возвращает цену предмета при продаже торговцу из Database.xlsx листа Prices
+    '''
     wb = openpyxl.load_workbook('Database.xlsx')
     ws = wb['Prices']
     name = re.sub(r'\s+', ' ', request)
@@ -93,28 +129,33 @@ def seek_vendor_price(request):
 
 
 def sort_items():
+    """Сортирует Prices по выгоде от мгновенной продаже"""
     update_table()
     try:
         df = pd.read_excel('Database.xlsx', sheet_name='Prices', engine='openpyxl')
     except ValueError:
-        print("Лист 'Prices' не найден, запущена функция 'update_prices'")
-        update_prices()
-        df = pd.read_excel("Database.xlsx", sheet_name="Prices", engine="openpyxl")
+        print("Лист 'Prices' не найден")
+        return
     sorted_df = df.sort_values(by="Instant Profit", ascending=False)
+    clean_sheet("Database.xlsx", 'Prices')
     wb = openpyxl.load_workbook("Database.xlsx")
+    ws = wb['Prices']
+    for i in dataframe_to_rows(sorted_df, index=False, header=True):
+        ws.append(i)
+    wb.save('Database.xlsx')
+    print('Вещи отсортированы')
 
 
 def sort_crafts():
+    """Сортирует таблицу с крафтами по столбцу Profit или Profit/H"""
     update_table()
     # Сортирует
     try:
         df = pd.read_excel('Database.xlsx', sheet_name='Crafts_raw', engine='openpyxl')
     except ValueError:
-        print('Лист "Crafts_raw" не найден, запущена функция "update_crafts"')
-        update_crafts()
-        df = pd.read_excel('Database.xlsx', sheet_name='Crafts_raw', engine='openpyxl')
-    print('Напишите по какому столбцу будем сортировать таблицу бартеров (Profit или Profit/H)')
-    by = str(input())
+        print('Лист "Crafts_raw" не найден')
+        return
+    by = str(input('Напишите по какому столбцу будем сортировать таблицу бартеров (Profit или Profit/H): '))
     sorted_df = df.sort_values(by=by, ascending=False)
     # Сохраняет сортировку + очищает страницу
     wb = openpyxl.load_workbook('Database.xlsx')
@@ -135,6 +176,7 @@ def sort_crafts():
 
 
 def sort_barters():
+    """Сортирует таблицу с крафтами по столбцу Profit или Instant Profit"""
     update_table()
     # Сортирует
     try:
@@ -143,8 +185,7 @@ def sort_barters():
         print('Лист "Barters_raw" не найден, запущена функция "update_crafts"')
         update_barters()
         df = pd.read_excel('Database.xlsx', sheet_name='Barters_raw', engine='openpyxl')
-    print('Напишите по какому столбцу будем сортировать таблицу бартеров (Profit или Instant Profit)')
-    by = str(input())
+    by = str(input('Напишите по какому столбцу будем сортировать таблицу бартеров (Profit или Instant Profit): '))
     sorted_df = df.sort_values(by=by, ascending=False)
     # Сохраняет сортировку + очищает страницу
     wb = openpyxl.load_workbook('Database.xlsx')
@@ -165,6 +206,7 @@ def sort_barters():
 
 
 def update_prices():
+    """Собирает предметы и их цены и делает из них таблицу"""
     driver_path = r'C:\Program Files (x86)\Google\Chrome\chromedriver.exe'
     driver = webdriver.Chrome(executable_path=driver_path)
     driver.get('https://tarkov-market.com/ru/')
@@ -204,12 +246,13 @@ def update_prices():
 
 
 def update_crafts():
+    """Подгружает список крафтов с сайта и формирует таблицу"""
     driver_path = r'C:\Program Files (x86)\Google\Chrome\chromedriver.exe'
     driver = webdriver.Chrome(executable_path=driver_path)
     driver.get('https://tarkov-market.com/ru/hideout')
     while True:
         try:
-            driver.find_element(By.XPATH, '//span[@class="big"][text()="Противогаз ГП-5"]')
+            driver.find_element(By.XPATH, '//span[@class="big"][text()="Противогаз ГП-7"]')
         except Exception:
             driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
         else:
@@ -298,6 +341,7 @@ def update_crafts():
 
 
 def update_barters():
+    """Подгружает список бартеров и делает из него таблицу"""
     driver_path = r'C:\Program Files (x86)\Google\Chrome\chromedriver.exe'
     driver = webdriver.Chrome(executable_path=driver_path)
     driver.get('https://tarkov-market.com/ru/barter')
@@ -332,7 +376,7 @@ def update_barters():
                                                    f'//div[@class="card recipe"][{i}]//div[@class="d-flex only mb-15"][{y}]//span').get_attribute(
                 'textContent'))
             in_amount.append(driver.find_element(By.XPATH,
-                                                 f'//div[@class="card recipe"][{i}]//div[@class="d-flex only mb-15"]{y}]//div[@class="image"]/div').get_attribute(
+                                                 f'//div[@class="card recipe"][{i}]//div[@class="d-flex only mb-15"][{y}]//div[@class="image"]/div').get_attribute(
                 'textContent'))
             prices_coordinates.append(seek_price(driver.find_element(By.XPATH,
                                                                      f'//div[@class="card recipe"][{i}]//div[@class="d-flex only mb-15"][{y}]//span').get_attribute(
@@ -384,7 +428,8 @@ def update_barters():
     driver.quit()
 
 
-def make_table():
+def make_crafts_table():
+    """Создаёт красивую таблицу из таблицы с крафтами"""
     wb = openpyxl.load_workbook('Database.xlsx')
     try:
         ws = wb['Crafts']
@@ -423,6 +468,7 @@ def make_table():
 
 
 def make_barters_table():
+    """Создаёт красивую таблицу из таблицы с юартерами"""
     wb = openpyxl.load_workbook('Database.xlsx')
     try:
         ws = wb['Barters']
@@ -439,7 +485,7 @@ def make_barters_table():
             ws.cell(row=row + y, column=2, value=f'=Barters_nude!{chr(ord("B") + (y * 3)) + str(i + 2)}')
             ws.cell(row=row + y, column=3, value=f'=Barters_nude!{chr(ord("C") + (y * 3)) + str(i + 2)}')
             ws.cell(row=row + y, column=4, value=f'=Barters_nude!{chr(ord("D") + (y * 3)) + str(i + 2)}')
-        ws.cell(row=row, column=5, value=f'=Barters_nude!Qstr{(i + 2)}')
+        ws.cell(row=row, column=5, value=f'=Barters_nude!Q{(i + 2)}')
         ws.merge_cells(start_row=row, start_column=5, end_row=row + 4, end_column=5)
         ws.cell(row=row, column=6, value=f'=Barters_nude!R{i + 2}')
         ws.merge_cells(start_row=row, start_column=6, end_row=row + 4, end_column=6)
@@ -456,12 +502,12 @@ def make_barters_table():
 
 
 def open_table():
+    """Открывает таблицу"""
     path = 'Database.xlsx'
     os.system("start " + path)
 
 
 if __name__ == '__main__':
-    os.chdir('C:\Eruano\Programming\Tarkov Parser')
     app()
 
 # TODO: Попробовать новенькое:
